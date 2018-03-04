@@ -17,8 +17,7 @@
 
 //Match frequency to the hardware version of the radio on your Feather
 #define FREQUENCY RF69_433MHZ
-//#define FREQUENCY RF69_868MHZ
-//#define FREQUENCY RF69_915MHZ
+
 #define ENCRYPTKEY "sampleEncryptKey" //exactly the same 16 characters/bytes on all nodes!
 #define IS_RFM69HCW true // set to 'true' if you are using an RFM69HCW module
 
