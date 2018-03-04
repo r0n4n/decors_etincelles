@@ -1,4 +1,4 @@
-// Programme permettant la lecture de la tram DMX et envoit des données par liaison RF
+// Programme permettant la lecture de la tram DMX et envoit des données par liaison RF a tous les décors 
 
 #include <DMXSerial.h>                   // Appel de la librairie SerialDMX
 #include <RFM69.h> //get it here: https://www.github.com/lowpowerlab/rfm69
@@ -11,7 +11,11 @@
 #define NODEID 1 // The unique identifier of this node
 #define NODELEDID 5 // id du décor led 
 //******************* LIST OF RECEIVERS *****************
-
+/* * costumes gauche : 2 
+ *   costumes milieu : 3
+ *   costumes droite : 4
+ *   Décors led : 5 
+ */
 
 
 
@@ -40,8 +44,17 @@
 
 
 #define nbr_canaux 6
+#define NBR_NODES 4
 const int CANAL[nbr_canaux + 1] = {506, 507, 508, 509, 510, 511, 512}; // Définit un tableau pour les canaux d'adressage de sortie
 char modes[nbr_canaux + 1] = {0, 0, 0, 0, 0, 0, 0};
+const int nodelist[NBR_NODES] = {2,3,4,5} ; 
+
+/*typedef struct {
+  const int nodeid ; 
+  int DMXchannels[0] ; 
+   
+} decor ; */
+
 
 RFM69 radio = RFM69(RFM69_CS, RFM69_IRQ, IS_RFM69HCW, RFM69_IRQN);
 
@@ -69,7 +82,11 @@ void setup () { // Configuration au démarrage
   pinMode(LedDMX, OUTPUT);
   pinMode(BP, INPUT);
 
+
 }
+
+
+
 
 void loop () { // Boucle du programme principal
 
@@ -78,26 +95,16 @@ void loop () { // Boucle du programme principal
   else
     digitalWrite(LedDMX, HIGH);
 
-  // LECTURE DE LA TRAM DMX
-  for (int i = 0; i < nbr_canaux + 1; i++) {        // Lecture des canaux et stockage des modes
-    if (DMXSerial.read(CANAL[i]) > 128) {
-      modes[i] = '1' ;
-    }
-    else if (DMXSerial.read(CANAL[i]) <= 128) {
-      modes[i] = '0' ;
-    }
-  }
-
-  for (int i = 2; i <= 5; i++) { // envoit des messages pour chaque récepteur. i est l'adresse du récepteur
-    int index = (i - 2) * 2 ; // on retrouve l'indice du canal dans le tableau
+  for (int i = 0; i < NBR_NODES-1; i++) { // envoit des messages pour chaque récepteur. i est l'adresse du récepteur   
+    //int index = (i - 2) * 2 ; // on retrouve l'indice du canal dans le tableau
     char radiopacket[2] ;
-    radiopacket[0] = modes[index] ;
-    radiopacket[1] = modes[index + 1] ;
-    radio.send(i, radiopacket, strlen(radiopacket), false) ;
+    radiopacket[0] = DMXSerial.read(CANAL[i*2]) ;
+    radiopacket[1] = DMXSerial.read(CANAL[i*2+1]) ;
+    radio.send(nodelist[i], radiopacket, strlen(radiopacket), false) ;
     radio.receiveDone(); //put radio in RX mode
   }
   char radiopacket[1] ;
   radiopacket[0] = modes[6] ;
   radio.send(NODELEDID, radiopacket, strlen(radiopacket), false) ;
-  radio.receiveDone(); //put radio in RX mode
+  radio.receiveDone(); //put radio in RX mode 
 }
