@@ -21,8 +21,6 @@
 
 //Match frequency to the hardware version of the radio on your Feather
 #define FREQUENCY RF69_433MHZ
-//#define FREQUENCY RF69_868MHZ
-//#define FREQUENCY RF69_915MHZ
 #define ENCRYPTKEY "sampleEncryptKey" //exactly the same 16 characters/bytes on all nodes!
 #define IS_RFM69HCW true // set to 'true' if you are using an RFM69HCW module
 
@@ -46,7 +44,7 @@
 #define nbr_canaux 6
 #define NBR_NODES 4
 const int CANAL[nbr_canaux + 1] = {506, 507, 508, 509, 510, 511, 512}; // Définit un tableau pour les canaux d'adressage de sortie
-char modes[nbr_canaux + 1] = {0, 0, 0, 0, 0, 0, 0};
+//char modes[nbr_canaux + 1] = {0, 0, 0, 0, 0, 0, 0};
 const int nodelist[NBR_NODES] = {2,3,4,5} ; 
 
 /*typedef struct {
@@ -86,8 +84,6 @@ void setup () { // Configuration au démarrage
 }
 
 
-
-
 void loop () { // Boucle du programme principal
 
   if (DMXSerial.noDataSince() > 100)      // LED Reception du signal
@@ -103,8 +99,8 @@ void loop () { // Boucle du programme principal
     radio.send(nodelist[i], radiopacket, strlen(radiopacket), false) ;
     radio.receiveDone(); //put radio in RX mode
   }
-  char radiopacket[1] ;
+/*  char radiopacket[1] ;
   radiopacket[0] = modes[6] ;
   radio.send(NODELEDID, radiopacket, strlen(radiopacket), false) ;
-  radio.receiveDone(); //put radio in RX mode 
+  radio.receiveDone(); //put radio in RX mode */
 }
