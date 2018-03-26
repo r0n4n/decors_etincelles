@@ -1,23 +1,19 @@
-// Programme permettant la lecture de la tram DMX et envoit des données par liaison RF a tous les décors 
+// Programme permettant la lecture de la tram DMX et envoit des données par liaison RF a tous les décors
 
 #include <DMXSerial.h>                   // Appel de la librairie SerialDMX
 #include <RFM69.h> //get it here: https://www.github.com/lowpowerlab/rfm69
-#include <SPI.h>
+
 
 //*********************************************************************************************
 // *********** IMPORTANT SETTINGS - YOU MUST CHANGE/ONFIGURE TO FIT YOUR HARDWARE *************
 //*********************************************************************************************
 #define NETWORKID 100 // The same on all nodes that talk to each other
 #define NODEID 1 // The unique identifier of this node
-#define NODELEDID 5 // id du décor led 
+#define NODERECEIVE 2
+
 //******************* LIST OF RECEIVERS *****************
-/* * costumes gauche : 2 
- *   costumes milieu : 3
- *   costumes droite : 4
- *   Décors led : 5 
- */
 
-
+//*******************************************************
 
 //Match frequency to the hardware version of the radio on your Feather
 #define FREQUENCY RF69_433MHZ
@@ -26,38 +22,21 @@
 
 
 //*********************************************************************************************
-#define SERIAL_BAUD 115200
-
 #define RFM69_CS 10 // Chip select
 #define RFM69_IRQ 2 // interruption 
 #define RFM69_IRQN 0 // Pin 2 is IRQ 0! 
 #define RFM69_RST 9 // Reset 
-
-
 
 //*********************   DEFINE OUT/IN PINS **************************
 #define LED 8 // onboard blinky
 #define BP 7 // pin du bouton poussoir 
 #define LedDMX  5
 
-
-#define nbr_canaux 6
-#define NBR_NODES 4
-const int CANAL[nbr_canaux + 1] = {506, 507, 508, 509, 510, 511, 512}; // Définit un tableau pour les canaux d'adressage de sortie
-//char modes[nbr_canaux + 1] = {0, 0, 0, 0, 0, 0, 0};
-const int nodelist[NBR_NODES] = {2,3,4,5} ; 
-
-/*typedef struct {
-  const int nodeid ; 
-  int DMXchannels[0] ; 
-   
-} decor ; */
-
+uint8_t radiopacket[61] ;
 
 RFM69 radio = RFM69(RFM69_CS, RFM69_IRQ, IS_RFM69HCW, RFM69_IRQN);
 
 void setup () { // Configuration au démarrage
-
   DMXSerial.init(DMXReceiver);          // Initialise la carte comme un récepteur DMX
 
   // Hard Reset the RFM module
@@ -73,34 +52,36 @@ void setup () { // Configuration au démarrage
     radio.setHighPower(); // Only for RFM69HCW & HW!
   }
   radio.setPowerLevel(31); // power output ranges from 0 (5dBm) to 31 (20dBm)
-
   radio.encrypt(ENCRYPTKEY);
 
   pinMode(LED, OUTPUT);
   pinMode(LedDMX, OUTPUT);
   pinMode(BP, INPUT);
-
-
 }
 
 
 void loop () { // Boucle du programme principal
-
-  if (DMXSerial.noDataSince() > 100)      // LED Reception du signal
-    digitalWrite(LedDMX, LOW);            // Si le signal n'a pas été reçu depuis + de 100 ms, la LED s'éteint
+  // vérifie si des données ont été reçues via la liaison DMX
+  if (DMXSerial.noDataSince() > 10)      // LED Reception du signal
+    digitalWrite(LedDMX, LOW);            // Si le signal n'a pas été reçu depuis + de 10 ms, la LED s'éteint
   else
     digitalWrite(LedDMX, HIGH);
 
-  for (int i = 0; i < NBR_NODES-1; i++) { // envoit des messages pour chaque récepteur. i est l'adresse du récepteur   
-    //int index = (i - 2) * 2 ; // on retrouve l'indice du canal dans le tableau
-    char radiopacket[2] ;
-    radiopacket[0] = DMXSerial.read(CANAL[i*2]) ;
-    radiopacket[1] = DMXSerial.read(CANAL[i*2+1]) ;
-    radio.send(nodelist[i], radiopacket, strlen(radiopacket), false) ;
-    radio.receiveDone(); //put radio in RX mode
+  // envoit les 60 premiers canaux DMX
+  if (DMXSerial.noDataSince() < 10) {
+    radiopacket[0] = 1 ;
+    for (int i = 1; i < 61 ; i++) { // envoit des messages pour chaque récepteur. i est l'adresse du récepteur
+      radiopacket[i] = DMXSerial.read(i) + 1 ;
+    }
   }
-/*  char radiopacket[1] ;
-  radiopacket[0] = modes[6] ;
-  radio.send(NODELEDID, radiopacket, strlen(radiopacket), false) ;
-  radio.receiveDone(); //put radio in RX mode */
+  radio.send(NODERECEIVE, (const void*)radiopacket, strlen(radiopacket), false) ;
+
+  //envoit les canaux DMX de 61 à 120
+  if (DMXSerial.noDataSince() < 10) {
+    radiopacket[0] = 61 ;
+    for (int i = 61; i < 121 ; i++) { // envoit des messages pour chaque récepteur. i est l'adresse du récepteur
+      radiopacket[i - 60] = DMXSerial.read(i) + 1 ;
+    }
+  }
+  radio.send(NODERECEIVE, (const void*)radiopacket, strlen(radiopacket), false) ;
 }
