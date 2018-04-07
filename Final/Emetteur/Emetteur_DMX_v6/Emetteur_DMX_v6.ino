@@ -62,26 +62,34 @@ void setup () { // Configuration au démarrage
 
 void loop () { // Boucle du programme principal
   // vérifie si des données ont été reçues via la liaison DMX
-  if (DMXSerial.noDataSince() > 10)      // LED Reception du signal
+  /*if (DMXSerial.noDataSince() > 10)      // LED Reception du signal
     digitalWrite(LedDMX, LOW);            // Si le signal n'a pas été reçu depuis + de 10 ms, la LED s'éteint
   else
-    digitalWrite(LedDMX, HIGH);
+    digitalWrite(LedDMX, HIGH);*/
 
   // envoit les 60 premiers canaux DMX
   if (DMXSerial.noDataSince() < 10) {
     radiopacket[0] = 1 ;
     for (int i = 1; i < 61 ; i++) { // envoit des messages pour chaque récepteur. i est l'adresse du récepteur
-      radiopacket[i] = DMXSerial.read(i) + 1 ;
+      radiopacket[i] = DMXSerial.read(i)+1 ;
+      //if (radiopacket[i] ==0 )
+        //radiopacket[i] = 1 ; 
     }
   }
   radio.send(NODERECEIVE, (const void*)radiopacket, strlen(radiopacket), false) ;
 
   //envoit les canaux DMX de 61 à 120
   if (DMXSerial.noDataSince() < 10) {
+    digitalWrite(LedDMX, HIGH);
     radiopacket[0] = 61 ;
     for (int i = 61; i < 121 ; i++) { // envoit des messages pour chaque récepteur. i est l'adresse du récepteur
-      radiopacket[i - 60] = DMXSerial.read(i) + 1 ;
+      radiopacket[i] = DMXSerial.read(i)+1 ;
+      //if (radiopacket[i] ==0 )
+      //  radiopacket[i] = 1 ;
     }
   }
+  else 
+    digitalWrite(LedDMX, LOW); 
   radio.send(NODERECEIVE, (const void*)radiopacket, strlen(radiopacket), false) ;
+  
 }
