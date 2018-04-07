@@ -71,9 +71,9 @@ void loop () { // Boucle du programme principal
   if (DMXSerial.noDataSince() < 10) {
     radiopacket[0] = 1 ;
     for (int i = 1; i < 61 ; i++) { // envoit des messages pour chaque récepteur. i est l'adresse du récepteur
-      radiopacket[i] = DMXSerial.read(i)+1 ;
-      //if (radiopacket[i] ==0 )
-        //radiopacket[i] = 1 ; 
+      radiopacket[i] = DMXSerial.read(i) ;
+      if (radiopacket[i] ==0 )
+        radiopacket[i] = 1 ; 
     }
   }
   radio.send(NODERECEIVE, (const void*)radiopacket, strlen(radiopacket), false) ;
@@ -83,9 +83,9 @@ void loop () { // Boucle du programme principal
     digitalWrite(LedDMX, HIGH);
     radiopacket[0] = 61 ;
     for (int i = 61; i < 121 ; i++) { // envoit des messages pour chaque récepteur. i est l'adresse du récepteur
-      radiopacket[i] = DMXSerial.read(i)+1 ;
-      //if (radiopacket[i] ==0 )
-      //  radiopacket[i] = 1 ;
+      radiopacket[i-60] = DMXSerial.read(i) ;
+      if (radiopacket[i-60] ==0 )
+        radiopacket[i-60] = 1 ;
     }
   }
   else 
