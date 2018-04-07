@@ -1,6 +1,6 @@
 \ MagicQ Show File. Chamsys Ltd.  www.chamsys.co.uk
 \ Show saved as 'D:/Documents/Arduino/Decor_etincelles/test-ws2811.sbk'
-\ Time: 07 Apr 2018 13:40:11
+\ Time: 07 Apr 2018 19:20:29
 \ PC
 \ Serial: ''
 
@@ -177,7 +177,7 @@ Y,009d,
 0000,0000,
 ;
 
-Z,0000,"Y",0001,0000,
+Z,0000,"25",0001,0000,
 0004,013d,0000,0000,0000,0000,000a,
 00000001,
 0000,0000,0000,0000,

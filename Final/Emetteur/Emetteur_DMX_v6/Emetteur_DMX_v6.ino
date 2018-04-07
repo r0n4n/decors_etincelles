@@ -33,6 +33,8 @@
 #define LedDMX  5
 
 uint8_t radiopacket[61] ;
+uint8_t *channels ;
+
 
 RFM69 radio = RFM69(RFM69_CS, RFM69_IRQ, IS_RFM69HCW, RFM69_IRQN);
 
@@ -57,15 +59,19 @@ void setup () { // Configuration au démarrage
   pinMode(LED, OUTPUT);
   pinMode(LedDMX, OUTPUT);
   pinMode(BP, INPUT);
+  channels = DMXSerial.getBuffer() ; 
 }
 
 
 void loop () { // Boucle du programme principal
   // vérifie si des données ont été reçues via la liaison DMX
-  /*if (DMXSerial.noDataSince() > 10)      // LED Reception du signal
+  if (DMXSerial.noDataSince() > 10)      // LED Reception du signal
     digitalWrite(LedDMX, LOW);            // Si le signal n'a pas été reçu depuis + de 10 ms, la LED s'éteint
-  else
-    digitalWrite(LedDMX, HIGH);*/
+  else { 
+    digitalWrite(LedDMX, HIGH);
+    //channels = DMXSerial.getBuffer() ; 
+    //radio.send(NODERECEIVE, (const void*)channels, 61, false) ;
+  }
 
   // envoit les 60 premiers canaux DMX
   if (DMXSerial.noDataSince() < 10) {
@@ -75,21 +81,26 @@ void loop () { // Boucle du programme principal
       if (radiopacket[i] ==0 )
         radiopacket[i] = 1 ; 
     }
+    radio.send(NODERECEIVE, (const void*)radiopacket, strlen(radiopacket), false) ;
   }
-  radio.send(NODERECEIVE, (const void*)radiopacket, strlen(radiopacket), false) ;
+  
+  
+  //delay(20) ; 
 
-  //envoit les canaux DMX de 61 à 120
+ //envoit les canaux DMX de 61 à 120 
   if (DMXSerial.noDataSince() < 10) {
-    digitalWrite(LedDMX, HIGH);
+    //digitalWrite(LedDMX, HIGH);
     radiopacket[0] = 61 ;
     for (int i = 61; i < 121 ; i++) { // envoit des messages pour chaque récepteur. i est l'adresse du récepteur
       radiopacket[i-60] = DMXSerial.read(i) ;
       if (radiopacket[i-60] ==0 )
         radiopacket[i-60] = 1 ;
     }
+    radio.send(NODERECEIVE, (const void*)radiopacket, strlen(radiopacket), false) ;
   }
-  else 
-    digitalWrite(LedDMX, LOW); 
-  radio.send(NODERECEIVE, (const void*)radiopacket, strlen(radiopacket), false) ;
+  //else 
+    //digitalWrite(LedDMX, LOW); 
+  
+  //delay (50) ; 
   
 }
