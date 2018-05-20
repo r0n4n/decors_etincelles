@@ -31,16 +31,21 @@
 #define LED 8 // onboard blinky
 #define BP 7 // pin du bouton poussoir 
 #define LedDMX  5
+#define DEBUGPIN 3
 
 uint8_t radiopacket[61] ;
 uint8_t radiopacket1[61] ;
 //uint8_t *channels ;
+int buff ;
 
 
 RFM69 radio = RFM69(RFM69_CS, RFM69_IRQ, IS_RFM69HCW, RFM69_IRQN);
 
 void setup () { // Configuration au démarrage
   DMXSerial.init(DMXReceiver);          // Initialise la carte comme un récepteur DMX
+  
+
+  //DMXSerial.attachOnUpdate(_channels_updated) ;
 
   // Hard Reset the RFM module
   pinMode(RFM69_RST, OUTPUT);
@@ -60,7 +65,13 @@ void setup () { // Configuration au démarrage
   pinMode(LED, OUTPUT);
   pinMode(LedDMX, OUTPUT);
   pinMode(BP, INPUT);
-  //channels = DMXSerial.getBuffer() ; 
+  pinMode(DEBUGPIN, OUTPUT) ;
+  //channels = DMXSerial.getBuffer() ;x
+  //  buff = DMXSerial.read(3) ;
+  //  digitalWrite(DEBUGPIN, HIGH) ;
+
+  DMXSerial.attachOnUpdate(_DMX_RFM69_send) ;
+
 }
 
 
@@ -68,33 +79,54 @@ void loop () { // Boucle du programme principal
   // vérifie si des données ont été reçues via la liaison DMX
   if (DMXSerial.noDataSince() > 1)      // LED Reception du signal
     digitalWrite(LedDMX, LOW);            // Si le signal n'a pas été reçu depuis + de 10 ms, la LED s'éteint
-  else { 
+  else
     digitalWrite(LedDMX, HIGH);
-    //channels = DMXSerial.getBuffer() ; 
-    //radio.send(NODERECEIVE, (const void*)channels, 61, false) ;
-    
-    radiopacket[0] = 1 ;
-    for (int i = 1; i < 61 ; i++) { // envoit des messages pour chaque récepteur. i est l'adresse du récepteur
-      radiopacket[i] = DMXSerial.read(i) ;
-      if (radiopacket[i] ==0 )
-        radiopacket[i] = 1 ; 
-    }
+  //channels = DMXSerial.getBuffer() ;
+  //radio.send(NODERECEIVE, (const void*)channels, 61, false) ;
+  //_trigger_detector(3) ;
+  //_DMX_RFM69_send() ;
+}
 
-    radiopacket1[0] = 61 ;
-    for (int i = 61; i < 121; i++) { // envoit des messages pour chaque récepteur. i est l'adresse du récepteur
-      radiopacket1[i-60] = DMXSerial.read(i) ;
-      if (radiopacket1[i-60] ==0 )
-        radiopacket1[i-60] = 1 ;
-    }
+void _DMX_RFM69_send(void) {
+  radiopacket[0] = 1 ;
+  for (int i = 1; i < 61 ; i++) { // envoit des messages pour chaque récepteur. i est l'adresse du récepteur
+    radiopacket[i] = DMXSerial.read(i) ;
+    if (radiopacket[i] == 0 )
+      radiopacket[i] = 1 ;
   }
 
-  // envoit les 60 premiers canaux DMX 
+  radiopacket1[0] = 61 ;
+  for (int i = 61; i < 121; i++) { // envoit des messages pour chaque récepteur. i est l'adresse du récepteur
+    radiopacket1[i - 60] = DMXSerial.read(i) ;
+    if (radiopacket1[i - 60] == 0 )
+      radiopacket1[i - 60] = 1 ;
+  }
+
+
+  // envoit les 60 premiers canaux DMX
   radio.send(NODERECEIVE, (const void*)radiopacket, strlen(radiopacket), false) ;
-  
- //envoit les canaux DMX de 61 à 120 
- //radio.send(NODERECEIVE, (const void*)radiopacket1, strlen(radiopacket1), false) ;
+  delay(1) ; 
+  //envoit les canaux DMX de 61 à 120
+  radio.send(NODERECEIVE, (const void*)radiopacket1, strlen(radiopacket1), false) ;
 
 
- //delay (50) ; 
-  
+  //delay (50) ;
 }
+
+void _trigger_detector(int channel) {
+  if (buff != DMXSerial.read(channel)) {
+    digitalWrite(DEBUGPIN, HIGH) ;
+    buff = DMXSerial.read(channel) ;
+    delay(10) ;
+  }
+  else
+    digitalWrite(DEBUGPIN, LOW) ;
+}
+
+void _channels_updated(void) {
+  digitalWrite(DEBUGPIN, HIGH) ;
+  delay(10000) ;
+  digitalWrite(DEBUGPIN, LOW) ;
+
+}
+
