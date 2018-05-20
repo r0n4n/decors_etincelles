@@ -5,6 +5,7 @@
 //********************INCLUDES************//
 #include <RFM69.h> //get it here: https://www.github.com/lowpowerlab/rfm69
 #include <Adafruit_NeoPixel.h>
+
 #ifdef __AVR__
 #include <avr/power.h>
 #endif
@@ -39,14 +40,28 @@
 
 #define BANDE1 5 // pin de la bande LEd a définir
 // How many NeoPixels are attached to the Arduino?
-#define NUMPIXELS      30
+#define NUMPIXELS      30.0
+#define CHANNELS_PER_PIXEL 3 // RVB
+#define PIX_PER_GROUP 3 // number of pix together 
+#define PACKET_SIZE 60.0 // size max of a packet received 
 
 
-//#define SERIAL
-#define INITIAL_STATE 1 
+#define CHANNELS_NBR (NUMPIXELS*CHANNELS_PER_PIXEL/CHANNELS_PER_PIXEL) // on détermine le nombre de canaux nécessaires 
+#define PIXELS_PER_PACKET  (PACKET_SIZE*PIX_PER_GROUP/CHANNELS_PER_PIXEL) // nombre de pixel par paquet 
+#define NUM_PACKET ceil(CHANNELS_NBR/PACKET_SIZE) // nombre de paquets  
+#define CHANNELS_REST ((int)CHANNELS_NBR%(int)PACKET_SIZE) // le nombre de channels restant si le nombre de channels total n'est pas multiple de la taille d'un paquet
+#define PIXELS_IN_LAST_PACKET (CHANNELS_REST*PIX_PER_GROUP/CHANNELS_PER_PIXEL) // Le nombre de channels concernés par le dernier paquet 
+
+
+
+#define DEBUG
+#define DEBUG_CONFIG
+#define INITIAL_STATE 1
+#define FINAL_STATE 2
 
 int start_pixel ;
 int state ;
+int packet_id ;
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, BANDE1, NEO_GRB + NEO_KHZ800);
 RFM69 radio = RFM69(RFM69_CS, RFM69_IRQ, IS_RFM69HCW, RFM69_IRQN);
@@ -99,6 +114,10 @@ void setup() {
 #endif
   //*************************************************
   digitalWrite(LED_haut, LOW) ;
+#ifdef DEBUG_CONFIG
+  Serial.print("Number of packet : ") ; Serial.println(NUM_PACKET) ;
+  Serial.print("PIXELS_IN_LAST_PACKET : ") ; Serial.println(PIXELS_IN_LAST_PACKET) ;
+#endif
 
 }
 
@@ -108,65 +127,70 @@ void loop() {
   {
     digitalWrite(reception, HIGH) ;
     //Serial.print("[RX_RSSI:"); Serial.print(radio.RSSI); Serial.println("]");
-    start_pixel = (radio.DATA[0] - 1) / 3  ; // the first byte give the number of the first channel send
-
+    packet_id = radio.DATA[0] ; // the first byte give the pakcet ID sent
+#ifdef DEBUG
     Serial.print("start_pixel: ") ;
-    Serial.println(start_pixel) ;
-    //prepare_pixel_color(start_pixel) ;
-    //pixels.show();
+    Serial.println(packet_id) ;
+#endif
     digitalWrite(reception, LOW) ;
     radio.receiveDone(); //put radio in RX mode
   }
 
+#ifdef DEBUG
+  Serial.print("Wait for packet ") ; Serial.print(state) ; Serial.println("...") ;
+#endif
 
-// if (start_pixel == 20) {
-//      digitalWrite(LED_bas, HIGH) ;
-//    }
-//    else
-//      digitalWrite(LED_bas, LOW) ;
-      
-      switch (state) {
-    case 1 : // wait for packet 1 
-//      Serial.print("Wait for packet ") ; 
-//      Serial.print(state) ; Serial.println("...") ;
-      if (start_pixel == 0){ //  packet 1 received 
-//        Serial.println("packet 1 received ") ;
-        prepare_pixel_color(start_pixel) ;
-        state = 2 ; // go for waiting packet 2 
-      }
-      break ; // return for waiting packets
-    case 2 : // wait for packet 2 
-//      Serial.print("Wait for packet ") ;
-//      Serial.print(state) ; Serial.println("...") ;
-      if (start_pixel == 20){ // packet 2 received 
-//        Serial.println("packet 2 received ") ;
-        prepare_pixel_color(start_pixel) ;
-        pixels.show();
-        state = 1 ; // go for waiting packet 1 
-      }
-      break ; // return for waiting packets
+  if (packet_id == state) {
+#ifdef DEBUG
+    Serial.print("packet ") ; Serial.print(packet_id) ; Serial.println(" received") ;
+#endif
+    start_pixel = (packet_id - 1) * PIXELS_PER_PACKET ;
 
+    if (state == NUM_PACKET) {
+      prepare_pixel_color3(start_pixel, PIXELS_IN_LAST_PACKET/3) ;
+      pixels.show();
+      state = INITIAL_STATE ;
+#ifdef DEBUG
+      Serial.println("Strip updated!") ;
+#endif
+    }
+    else {
+      prepare_pixel_color3(start_pixel, PIXELS_PER_PACKET/3) ;
+      state++ ;
+    }
   }
-
-
-
-
-
   
   Serial.flush(); //make sure all serial data is clocked out before sleeping the MCU
 }
 
-void prepare_pixel_color(int start_pixel) {
-  for (int i = 0; i <= 19  ; i++) {
-    pixels.setPixelColor(i + start_pixel , pixels.Color(radio.DATA[3 * i + 1], radio.DATA[3 * i + 2], radio.DATA[3 * i + 3])); // Moderately bright green color.
-#ifdef SERIAL
-    //      Serial.print("Pixel:") ; Serial.print(i + start_pixel) ; Serial.print(": ") ;
-    //      Serial.print(radio.DATA[3 * i + 1]) ;
-    //      Serial.print(" ") ;
-    //      Serial.print(radio.DATA[3 * i + 2]) ;
-    //      Serial.print(" ") ;
-    //      Serial.print(radio.DATA[3 * i + 3]) ;
-    //      Serial.println(" ") ;
+void prepare_pixel_color(int start_pixel, int pixel_number) {
+  for (int i = 0; i < pixel_number  ; i++) {
+    pixels.setPixelColor(i + start_pixel , pixels.Color(radio.DATA[3 * i + 1], radio.DATA[3 * i + 2], radio.DATA[3 * i + 3])); // change the color
+#ifdef DEBUG
+    //          Serial.print("Pixel:") ; Serial.print(i + start_pixel) ; Serial.print(": ") ;
+    //          Serial.print(radio.DATA[3 * i + 1]) ;
+    //          Serial.print(" ") ;
+    //          Serial.print(radio.DATA[3 * i + 2]) ;
+    //          Serial.print(" ") ;
+    //          Serial.print(radio.DATA[3 * i + 3]) ;
+    //          Serial.println(" ") ;
+#endif
+  }
+}
+
+void prepare_pixel_color3(int start_pixel, int pixel_number) {
+  for (int i = 0; i < pixel_number  ; i++) {
+    pixels.setPixelColor(i*3 + start_pixel , pixels.Color(radio.DATA[3 * i + 1], radio.DATA[3 * i + 2], radio.DATA[3 * i + 3])); // change the color
+    pixels.setPixelColor(i*3+1 + start_pixel , pixels.Color(radio.DATA[3 * i + 1], radio.DATA[3 * i + 2], radio.DATA[3 * i + 3])); // change the color
+    pixels.setPixelColor(i*3+2 + start_pixel , pixels.Color(radio.DATA[3 * i + 1], radio.DATA[3 * i + 2], radio.DATA[3 * i + 3])); // change the color
+#ifdef DEBUG
+    //          Serial.print("Pixel:") ; Serial.print(i + start_pixel) ; Serial.print(": ") ;
+    //          Serial.print(radio.DATA[3 * i + 1]) ;
+    //          Serial.print(" ") ;
+    //          Serial.print(radio.DATA[3 * i + 2]) ;
+    //          Serial.print(" ") ;
+    //          Serial.print(radio.DATA[3 * i + 3]) ;
+    //          Serial.println(" ") ;
 #endif
   }
 }
