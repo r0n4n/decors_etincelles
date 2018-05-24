@@ -12,7 +12,7 @@
 /*********************************************/
 
 //#define DEBUG
-#define DEBUG_CONFIG
+//#define DEBUG_CONFIG
 
 //*********************************************************************************************
 // *********** IMPORTANT SETTINGS - YOU MUST CHANGE/ONFIGURE TO FIT YOUR HARDWARE *************
@@ -43,11 +43,11 @@
 
 // How many NeoPixels are attached to the Arduino?
 #define DECOR_ID 2 
-#define NUMPIXELS      40.0
+#define NUMPIXELS      50.0
 #define CHANNELS_PER_PIXEL 3 // RVB
 #define PIX_PER_GROUP 1 // number of pix together 
 #define PACKET_SIZE 60.0 // size max of a packet received
-#define DECOR_DMX_ADRESS  151 
+#define DECOR_DMX_ADRESS  1
 #define PACKET_ID_MAX 9
 
 #define CHANNELS_NBR (NUMPIXELS*CHANNELS_PER_PIXEL/PIX_PER_GROUP) // on détermine le nombre de canaux nécessaires 
@@ -81,8 +81,8 @@ RFM69 radio = RFM69(RFM69_CS, RFM69_IRQ, IS_RFM69HCW, RFM69_IRQN);
 
 //________________SETUP______________________
 void setup() {
-
-  state = INITIAL_STATE ; // initialize the state machine 
+  find_index() ;
+  state = start_packet ; // initialize the state machine 
   //**************** CONFIG DES ENTREES/SORTIES *************
   pinMode(LED_bas, OUTPUT);
   pinMode(LED_haut, OUTPUT);
@@ -115,7 +115,7 @@ void setup() {
   pixels.begin(); // This initializes the NeoPixel library.
   //*************************************
   Serial.begin(SERIAL_BAUD);
-  find_index() ; 
+   
 
   //********* AFFICHE LES INFOS DU MODULES *******
 #ifdef DEBUG_CONFIG
@@ -160,34 +160,40 @@ void loop() {
     //Serial.print("[RX_RSSI:"); Serial.print(radio.RSSI); Serial.println("]");
     packet_id = radio.DATA[0] ; // the first byte give the pakcet ID sent
 #ifdef DEBUG
-    Serial.print("start_pixel: ") ;
-    Serial.println(packet_id) ;
+//    Serial.print("start_pixel: ") ;
+//    Serial.println(packet_id) ;
 #endif
     digitalWrite(reception, LOW) ;
     radio.receiveDone(); //put radio in RX mode
   }
 
 #ifdef DEBUG
-  Serial.print("Wait for packet ") ; Serial.print(state) ; Serial.println("...") ;
+  //Serial.print("Wait for packet ") ; Serial.print(state) ; Serial.println("...") ;
 #endif
 
   if (packet_id == state) {
 #ifdef DEBUG
     Serial.print("packet ") ; Serial.print(packet_id) ; Serial.println(" received") ;
 #endif
-    start_pixel = (packet_id - 1) * PIXELS_PER_PACKET ;
+   // start_pixel = (packet_id - 1) * PIXELS_PER_PACKET ;
 
-    if (state == NUM_PACKET) {
-      prepare_pixel_color(start_pixel, PIXELS_PER_PACKET) ;
+    if (state == stop_packet) {
+      prepare_pixel_color1(1, stop_index, packet_id) ;
+      //prepare_pixel_color(start_pixel, PIXELS_PER_PACKET) ;
       //prepare_pixel_color3(start_pixel, NBR_GROUP_PER_PACKET) ; 
       pixels.show();
-      state = INITIAL_STATE ;
+      state = start_packet ;
 #ifdef DEBUG
       Serial.println("Strip updated!") ;
 #endif
     }
+    else if (state ==start_packet){
+       prepare_pixel_color1(start_index, PACKET_SIZE, packet_id) ;
+       state++ ;
+    }
     else {
-      prepare_pixel_color(start_pixel, PIXELS_PER_PACKET) ;
+      prepare_pixel_color1(1, PACKET_SIZE, packet_id) ;
+      //prepare_pixel_color(start_pixel, PIXELS_PER_PACKET) ;
      // prepare_pixel_color3(start_pixel, NBR_GROUP_PER_PACKET) ;
       state++ ;
     }
@@ -196,21 +202,13 @@ void loop() {
   Serial.flush(); //make sure all serial data is clocked out before sleeping the MCU
 }
 
-void prepare_pixel_color1(int start_channel, int stop_channel, int packet_ID) {
-  
-  int start_indice ; 
-  if (start_channel > DECOR_DMX_ADRESS) {
-    start_indice = 0 ;
-  }
-  else { 
-    
-  }
-  start_indice = start_channel - (packet_ID-1)*PACKET_SIZE ; 
-  int stop_indice = stop_channel - (packet_ID)*PACKET_SIZE ; 
-
-  int pixel_offset = ((packet_ID-1)*PACKET_SIZE-DECOR_DMX_ADRESS +1)/CHANNELS_PER_PIXEL  ; 
-  for (int i = start_indice; i < stop_indice  ; i+3) { // parcours les éléments du tableau reçu 
-    pixels.setPixelColor(i-pixel_offset, pixels.Color(radio.DATA[i], radio.DATA[i+1], radio.DATA[i+2])); // change the color
+void prepare_pixel_color1(int start_indice, int stop_indice, int packet_ID) {
+ // Serial.println("prepare_pixel_color1 launched") ; 
+  //int pixel_offset = ((packet_ID-1)*PACKET_SIZE-DECOR_DMX_ADRESS)/CHANNELS_PER_PIXEL  ; 
+  int pixel_offset = ((packet_ID-1)*PACKET_SIZE + 1 - DECOR_DMX_ADRESS)/3 ; 
+  for (int i = start_indice; i < stop_indice  ; i+=3) { // parcours les éléments du tableau reçu 
+    // Serial.print("i : ") ;   Serial.println(i) ; 
+    pixels.setPixelColor((i+2)/3+pixel_offset, pixels.Color(radio.DATA[i], radio.DATA[i+1], radio.DATA[i+2])); // change the color
 #ifdef DEBUG
     //          Serial.print("Pixel:") ; Serial.print(i + start_pixel) ; Serial.print(": ") ;
     //          Serial.print(radio.DATA[3 * i + 1]) ;
@@ -261,11 +259,11 @@ void find_index() {
   while ( packet_index < PACKET_ID_MAX) {
     int channel_inf = (packet_index-1)*PACKET_SIZE+1 ; 
     int channel_sup = packet_index*PACKET_SIZE ; 
-    if ( (channel_inf <DECOR_DMX_ADRESS)   &(DECOR_DMX_ADRESS <=channel_sup)  ){ 
+    if ( (channel_inf <=DECOR_DMX_ADRESS)   &(DECOR_DMX_ADRESS <=channel_sup)  ){ 
        start_index = DECOR_DMX_ADRESS - ((packet_index -1)*60) ; 
        start_packet = packet_index ; 
     }
-    if (  (channel_inf <LAST_DMX_ADRESS)   &(LAST_DMX_ADRESS <=channel_sup)  ){
+    if (  (channel_inf <=LAST_DMX_ADRESS)   &(LAST_DMX_ADRESS <=channel_sup)  ){
       stop_index = LAST_DMX_ADRESS - ((packet_index -1)*60) ; 
       stop_packet = packet_index ; 
       break ; 
