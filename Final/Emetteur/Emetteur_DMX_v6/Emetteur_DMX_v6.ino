@@ -107,6 +107,7 @@ void build_packet(int packet_id, int packet_size) {
 
   radio.send(NODERECEIVE, (const void*)radiopacket, strlen(radiopacket), false) ; // envoi du paquet de données
   //delay(1) ; // delai d'attente pour laisser le temps au récepteur de lire la trame
+  //delayMicroseconds(50); 
 }
 
 
