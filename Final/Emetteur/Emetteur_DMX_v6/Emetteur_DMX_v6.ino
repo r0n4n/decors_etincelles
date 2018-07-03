@@ -29,7 +29,6 @@
 
 //*********************   DEFINE OUT/IN PINS **************************
 #define LED 8 // onboard blinky
-#define BP 7 // pin du bouton poussoir 
 #define LEDMX  5
 #define DEBUGPIN 3
 
@@ -53,8 +52,10 @@ void setup () { // Configuration au démarrage
 
   pinMode(LED, OUTPUT);
   pinMode(LEDMX, OUTPUT);
-  pinMode(BP, INPUT);
   pinMode(DEBUGPIN, OUTPUT) ;
+
+  digitalWrite(LEDMX,HIGH) ;
+  digitalWrite(LED,HIGH) ;  
 
   // Hard Reset the RFM module
   pinMode(RFM69_RST, OUTPUT);
@@ -85,17 +86,18 @@ void loop () { // Boucle du programme principal
 
 /********* Envoi les paquets l'un après l'autre *******/
 void _DMX_RFM69_send(void) {
-  digitalWrite(3,HIGH) ; 
+  digitalWrite(LED,HIGH) ; 
     for (int i = 1 ; i <=PACKET_NBR ; i++){
       build_packet(i,PACKET_SIZE); // construction et envoi du paquet i
     }
-    digitalWrite(3,LOW) ;
+    digitalWrite(LED,LOW) ;
 }
 
 /* Construit un paquet de données selon l'identifiant donné en paramètre puis envoi le paquet via le RM69 */
 void build_packet(int packet_id, int packet_size) {
 
   radiopacket[0] = packet_id ; // L'identifiant du paquet est le premier byte du paquet à envoyer
+//  radiopacket[0] = 2 ; 
   int channel_offset = (packet_id - 1) * PACKET_SIZE ; // calcul de l'offset du canal DMX selon le packet_id
   for (int i = 1 ; i < (packet_size + 1) ; i++) { // construction du paquet à envoyer avec les canaux DMX
     //digitalWrite(DEBUGPIN,HIGH) ;
@@ -106,8 +108,8 @@ void build_packet(int packet_id, int packet_size) {
   }
 
   radio.send(NODERECEIVE, (const void*)radiopacket, strlen(radiopacket), false) ; // envoi du paquet de données
-  //delay(1) ; // delai d'attente pour laisser le temps au récepteur de lire la trame
-  //delayMicroseconds(50); 
+  delay(10) ; // delai d'attente pour laisser le temps au récepteur de lire la trame
+//  delayMicroseconds(50); 
 }
 
 

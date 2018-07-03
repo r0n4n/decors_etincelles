@@ -34,8 +34,8 @@
 #endif
 /*********************************************************************************************/
 
-//#define DEBUG
-//#define DEBUG_CONFIG
+#define DEBUG
+#define DEBUG_CONFIG
 
 //*********************************************************************************************
 // *********** IMPORTANT SETTINGS - YOU MUST CHANGE/ONFIGURE TO FIT YOUR HARDWARE *************
