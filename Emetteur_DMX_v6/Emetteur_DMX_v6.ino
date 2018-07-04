@@ -37,12 +37,13 @@
 /****************** DEFINE LIST ***************************/
 #define PACKET_SIZE 60 // number of channels to send per packet
 #define PACKET_SIZE_PLUS_ID  PACKET_SIZE+1 // total size of a packet with the ID  
-#define PACKET_NBR 9 // nombre paquet que l'on souhaite envoyer 
-#define PACKET_AVAILABLE 9 // nombre de paquets qui décomposent l'ensemble des canaux DMX 
+#define PACKET_NBR 8 // nombre paquet que l'on souhaite envoyer 
+#define PACKET_AVAILABLE 8 // nombre de paquets qui décomposent l'ensemble des canaux DMX 
 /*************************************************************/
 
 uint8_t radiopacket[PACKET_SIZE_PLUS_ID] ;
-int packet_id_list[PACKET_AVAILABLE] = {1, 61, 121, 181, 241, 301, 361, 421, 481} ; // liste des premiers canaux de chaque paquet
+uint8_t last_dmx_channels[513] ;
+//int packet_id_list[PACKET_AVAILABLE] = {1, 61, 121, 181, 241, 301, 361, 421, 481} ; // liste des premiers canaux de chaque paquet
 int indice_packet = 1 ;
 
 RFM69 radio = RFM69(RFM69_CS, RFM69_IRQ, IS_RFM69HCW, RFM69_IRQN);
@@ -55,7 +56,7 @@ void setup () { // Configuration au démarrage
   pinMode(DEBUGPIN, OUTPUT) ;
 
   digitalWrite(LEDMX,HIGH) ;
-  digitalWrite(LED,HIGH) ;  
+//  digitalWrite(LED,HIGH) ;  
 
   // Hard Reset the RFM module
   pinMode(RFM69_RST, OUTPUT);
@@ -71,6 +72,7 @@ void setup () { // Configuration au démarrage
   }
   radio.setPowerLevel(31); // power output ranges from 0 (5dBm) to 31 (20dBm)
   radio.encrypt(ENCRYPTKEY);
+  
   DMXSerial.attachOnUpdate(_DMX_RFM69_send) ; // Run the _DMX_RFM69_send function each time that a new DMX packet is received
   //DMXSerial.attachOnUpdate(debug_channels_change) ; 
   
@@ -79,56 +81,76 @@ void setup () { // Configuration au démarrage
 
 void loop () { // Boucle du programme principal
   // vérifie si des données ont été reçues via la liaison DMX
-  if (DMXSerial.noDataSince() > 1)      // LED Reception du signal
+  if (DMXSerial.noDataSince() > 5)      // LED Reception du signal
     digitalWrite(LEDMX, LOW);            // Si le signal n'a pas été reçu depuis + de 1 ms, la LED s'éteint
   else
     digitalWrite(LEDMX, HIGH);
   //_DMX_RFM69_send() ;
-  debug_channels_change() ; 
+  //debug_channels_change() ; 
 }
 
 /********* Envoi les paquets l'un après l'autre *******/
 void _DMX_RFM69_send(void) {
-  digitalWrite(LED,HIGH) ; 
+   // digitalWrite(LED,HIGH) ; 
+   if (dmx_change()) {
+    digitalWrite(LED,HIGH) ; 
     for (int i = 1 ; i <=PACKET_NBR ; i++){
-      build_packet(i,PACKET_SIZE); // construction et envoi du paquet i   
+      build_packet(i); // construction et envoi du paquet i   
       radio.send(NODERECEIVE, (const void*)radiopacket, strlen(radiopacket), false) ; // envoi du paquet de données
-      //delay(1) ; // delai d'attente pour laisser le temps au récepteur de lire la trame
-      //delayMicroseconds(50); 
     }
-    digitalWrite(LED,LOW) ;
+   }
+   else
+    digitalWrite(LED,LOW) ; 
+    
+   // digitalWrite(LED,LOW) ;
 }
 
-/* Construit un paquet de données selon l'identifiant donné en paramètre puis envoi le paquet via le RM69 */
-void build_packet(int packet_id, int packet_size) {
+/*
+ * Construit un paquet de plusieurs canaux DMX selon le packet_id données en paramètre. 
+ * @param int packet_id : l'identifiant du paquet à envoyer  
+ * @return None. 
+ */
+void build_packet(int packet_id) {
   radiopacket[0] = packet_id ; // L'identifiant du paquet est le premier byte du paquet à envoyer
   int channel_offset = (packet_id - 1) * PACKET_SIZE ; // calcul de l'offset du canal DMX selon le packet_id
-  for (int i = 1 ; i < (packet_size + 1) ; i++) { // construction du paquet à envoyer avec les canaux DMX
-    //digitalWrite(DEBUGPIN,HIGH) ;
+  for (int i = 1 ; i < (PACKET_SIZE + 1) ; i++) { // construction du paquet à envoyer avec les canaux DMX
     radiopacket[i] = DMXSerial.read(i + channel_offset) ;
-    if (radiopacket[i] == 0 )
-      radiopacket[i] = 1 ; // rejet des zeros sur les canaux DMX pour éviter les erreurs de transmission sur la liason RFM69
-    //digitalWrite(DEBUGPIN,LOW) ;
+    delete_zeros(i) ; 
   }
 }
 
-
-/**DEBUG FUNCTION */
-void _channels_updated(void) {
-  digitalWrite(DEBUGPIN, HIGH) ;
-  delay(10000) ;
-  digitalWrite(DEBUGPIN, LOW) ;
-
+/*
+ * delete_zeros regarde si la valeur du canal donnée en paramètre est nulle. Si oui elle la chnage en 1. Cette function est utilisée pour permettre l'envoi des données via    
+ * le module RFM69. Le module ne prends pas les valeurs nulles.
+ * @param int i : le canal concerné 
+ * @return None. 
+ */
+void delete_zeros(int i){
+   if (radiopacket[i] == 0 )
+      radiopacket[i] = 1 ; // rejet des zeros sur les canaux DMX pour éviter les erreurs de transmission sur la liason RFM69
 }
 
-/*cette function change l'état d'une leds sur un des canaux a changé de valeur.  **/
-void debug_channels_change(void) {
-//  for (int i=1 ; i<512 ; i++){
-//    if (DMXSerial.read(1)>128)
-//        digitalWrite(LED, HIGH) ;
-////    }
-//    else 
-//      digitalWrite(LED,LOW) ;  
+/*
+ * dmx_change compare la trame DMX qui vient d'être reçu avec la précedente pour voir si les valeurs ont changées.  
+ * @param none.
+ * @return un boolean. True si la trame a changée. False sinon.  
+ */
+bool dmx_change(){
+  bool change = false ; 
+  for (int i=1; i<=512; i++) {
+    if (last_dmx_channels[i] !=  DMXSerial.read(i))
+      change = true ; 
+    last_dmx_channels[i] =  DMXSerial.read(i) ; 
+  }
+  return change ; 
+}
+
+/********************************DEBUG FUNCTION ***********************/
+
+
+/** cette function fait varier la luminosité d'une led en fonction de la valeur du canal canal choisi.
+* peut être utile pour vérifier la bonne lecture de la trame DMX **/
+void debug_channels_change(void) {  
   analogWrite(LED, DMXSerial.read(1)) ;
 }
-
+/************************************************************************/
