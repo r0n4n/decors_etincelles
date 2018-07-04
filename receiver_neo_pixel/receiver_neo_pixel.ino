@@ -34,8 +34,8 @@
 #endif
 /*********************************************************************************************/
 
-#define DEBUG
-#define DEBUG_CONFIG
+//#define DEBUG
+//#define DEBUG_CONFIG
 
 //*********************************************************************************************
 // *********** IMPORTANT SETTINGS - YOU MUST CHANGE/ONFIGURE TO FIT YOUR HARDWARE *************
@@ -74,26 +74,11 @@
 #define CHANNELS_PER_PIXEL 3 // RVB
 #define PIX_PER_GROUP 1 // number of pixels together 
 #define PACKET_SIZE 60.0 // size of a packet received
-#define DECOR_DMX_ADRESS  1 // adresse DMX du récepteur 
+#define DECOR_DMX_ADRESS  151 // adresse DMX du récepteur 
 #define PACKET_ID_MAX 9 // nombre de paquets maximal que peut envoyer l'émetteur (dépend de la taille des paquets)  
 
 #define CHANNELS_NBR (NUMPIXELS*CHANNELS_PER_PIXEL/PIX_PER_GROUP) // on détermine le nombre de canaux nécessaires
 #define LAST_DMX_ADRESS (DECOR_DMX_ADRESS+CHANNELS_NBR-1)
-
-/**** A SUPPRIMER ? ***************/
-//#define DECOR_ID 2
-
-//#define PIXELS_PER_PACKET  (PACKET_SIZE*PIX_PER_GROUP/CHANNELS_PER_PIXEL) // nombre de pixel par paquet
-//#define NUM_PACKET ceil(CHANNELS_NBR/PACKET_SIZE) // nombre de paquets
-//#define CHANNELS_REST ((int)CHANNELS_NBR%(int)PACKET_SIZE) // le nombre de channels restant si le nombre de channels total n'est pas multiple de la taille d'un paquet
-//#define PIXELS_IN_LAST_PACKET (CHANNELS_REST*PIX_PER_GROUP/CHANNELS_PER_PIXEL) // Le nombre de channels concernés par le dernier paquet
-//#define NBR_GROUP_PER_PACKET (PIXELS_PER_PACKET/PIX_PER_GROUP)
-//
-//#define FIRST_PACKET_TO_READ ceil(DECOR_DMX_ADRESS/PACKET_SIZE)
-//#define INITIAL_STATE 1
-//#define FINAL_STATE 2
-//int start_pixel ;
-/*******************************/
 
 /*************** VARIABLES ********************/
 int state ; // L'id du paquet qui est attendu
@@ -149,6 +134,7 @@ void loop() {
     // start_pixel = (packet_id - 1) * PIXELS_PER_PACKET ;
 
     if (state == stop_packet) { // si le paquet reçu est le dernier paquet exigé
+       digitalWrite(LED1, LOW) ;
       prepare_pixel_color1(1, stop_index, packet_id) ;
       //prepare_pixel_color(start_pixel, PIXELS_PER_PACKET) ;
       //prepare_pixel_color3(start_pixel, NBR_GROUP_PER_PACKET) ;
@@ -162,6 +148,7 @@ void loop() {
 #endif
     }
     else if (state == start_packet) { // si le paquet reçu est le premier paquet exigé
+       digitalWrite(LED1, HIGH) ;
       prepare_pixel_color1(start_index, PACKET_SIZE, packet_id) ;
       state++ ; // on attend le paquet suivant
 #ifdef DEBUG
@@ -186,21 +173,27 @@ void loop() {
 void prepare_pixel_color1(int start_indice, int stop_indice, int packet_ID) {
   // Serial.println("prepare_pixel_color1 launched") ;
   //int pixel_offset = ((packet_ID-1)*PACKET_SIZE-DECOR_DMX_ADRESS)/CHANNELS_PER_PIXEL  ;
-  int pixel_offset = ((packet_ID - 1) * PACKET_SIZE + 1 - DECOR_DMX_ADRESS) / 3 -1  ;
+  int pixel_offset = ((packet_ID - 1) * PACKET_SIZE + 1 - DECOR_DMX_ADRESS) / 3 - 1  ;
   for (int i = start_indice; i < stop_indice  ; i += 3) { // parcours les éléments du tableau reçu
     // Serial.print("i : ") ;   Serial.println(i) ;
-    if (radio.DATA[i]==1 ) { radio.DATA[i] = 0 ; } 
-    if (radio.DATA[i+1]==1 ) { radio.DATA[i+1] = 0 ; } 
-    if (radio.DATA[i+2]==1 ) { radio.DATA[i+2] = 0 ; } 
+    if (radio.DATA[i] == 1 ) {
+      radio.DATA[i] = 0 ;
+    }
+    if (radio.DATA[i + 1] == 1 ) {
+      radio.DATA[i + 1] = 0 ;
+    }
+    if (radio.DATA[i + 2] == 1 ) {
+      radio.DATA[i + 2] = 0 ;
+    }
     pixels.setPixelColor((i + 2) / 3 + pixel_offset, pixels.Color(radio.DATA[i], radio.DATA[i + 1], radio.DATA[i + 2])); // change the color
 #ifdef DEBUG
-    //          Serial.print("Pixel:") ; Serial.print((i + 2) / 3 + pixel_offset) ; Serial.print(": ") ;
-    //          Serial.print(radio.DATA[i]) ;
-    //          Serial.print(" ") ;
-    //          Serial.print(radio.DATA[i+1]) ;
-    //          Serial.print(" ") ;
-    //          Serial.print(radio.DATA[i+2]) ;
-    //          Serial.println(" ") ;
+//    Serial.print("Pixel:") ; Serial.print((i + 2) / 3 + pixel_offset) ; Serial.print(": ") ;
+//    Serial.print(radio.DATA[i]) ;
+//    Serial.print(" ") ;
+//    Serial.print(radio.DATA[i + 1]) ;
+//    Serial.print(" ") ;
+//    Serial.print(radio.DATA[i + 2]) ;
+//    Serial.println(" ") ;
 #endif
   }
 }

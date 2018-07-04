@@ -29,7 +29,7 @@
 
 //*********************   DEFINE OUT/IN PINS **************************
 #define LED 8 // onboard blinky
-#define LEDMX  5
+#define LEDMX  7
 #define DEBUGPIN 3
 
 /**********************************************************************/
@@ -72,6 +72,8 @@ void setup () { // Configuration au démarrage
   radio.setPowerLevel(31); // power output ranges from 0 (5dBm) to 31 (20dBm)
   radio.encrypt(ENCRYPTKEY);
   DMXSerial.attachOnUpdate(_DMX_RFM69_send) ; // Run the _DMX_RFM69_send function each time that a new DMX packet is received
+  //DMXSerial.attachOnUpdate(debug_channels_change) ; 
+  
 }
 
 
@@ -82,6 +84,7 @@ void loop () { // Boucle du programme principal
   else
     digitalWrite(LEDMX, HIGH);
   //_DMX_RFM69_send() ;
+  debug_channels_change() ; 
 }
 
 /********* Envoi les paquets l'un après l'autre *******/
@@ -108,8 +111,8 @@ void build_packet(int packet_id, int packet_size) {
   }
 
   radio.send(NODERECEIVE, (const void*)radiopacket, strlen(radiopacket), false) ; // envoi du paquet de données
-  delay(10) ; // delai d'attente pour laisser le temps au récepteur de lire la trame
-//  delayMicroseconds(50); 
+  //delay(1) ; // delai d'attente pour laisser le temps au récepteur de lire la trame
+  delayMicroseconds(50); 
 }
 
 
@@ -120,3 +123,15 @@ void _channels_updated(void) {
   digitalWrite(DEBUGPIN, LOW) ;
 
 }
+
+/*cette function change l'état d'une leds sur un des canaux a changé de valeur.  **/
+void debug_channels_change(void) {
+//  for (int i=1 ; i<512 ; i++){
+//    if (DMXSerial.read(1)>128)
+//        digitalWrite(LED, HIGH) ;
+////    }
+//    else 
+//      digitalWrite(LED,LOW) ;  
+  analogWrite(LED, DMXSerial.read(1)) ;
+}
+
