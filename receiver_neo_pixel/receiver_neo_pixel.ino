@@ -53,7 +53,7 @@
 #define LED3 8
 #define T1 3 // Transistor 1 
 #define T2 4 // Transistor 2 
-#define BANDE1 5 // pin pour contrôler la bande Led
+#define BANDE1 A3 // pin pour contrôler la bande Led
 
 #define RECEPTION LED3 // la led clignote dès que le récepteur reçoit un message 
 //********************************************************************************************
@@ -64,7 +64,7 @@
 #define NODEID 2 // L'adresse réseau du récepteur 
 #define FREQUENCY RF69_433MHZ //Match frequency to the hardware version of the radio on your Feather
 #define IS_RFM69HCW true // set to 'true' if you are using an RFM69HCW module
-#define NO_DATA_SINCE 60 
+#define NO_DATA_SINCE 60
 
 //************************************************************************************
 #define SERIAL_BAUD 115200
@@ -74,9 +74,10 @@
 #define NUMPIXELS      50.0
 #define CHANNELS_PER_PIXEL 3 // RVB
 #define PIX_PER_GROUP 1 // number of pixels together 
-#define PACKET_SIZE 60.0 // size of a packet received
-#define DECOR_DMX_ADRESS  1 // adresse DMX du récepteur 
+#define PACKET_SIZE 60 // size of a packet received
+#define DECOR_DMX_ADRESS  151 // adresse DMX du récepteur 
 #define PACKET_ID_MAX 9 // nombre de paquets maximal que peut envoyer l'émetteur (dépend de la taille des paquets)  
+#define FINAL_PACKET 8
 
 #define CHANNELS_NBR (NUMPIXELS*CHANNELS_PER_PIXEL/PIX_PER_GROUP) // on détermine le nombre de canaux nécessaires
 #define LAST_DMX_ADRESS (DECOR_DMX_ADRESS+CHANNELS_NBR-1)
@@ -88,7 +89,7 @@ int start_index = 0  ; // premier indice dans le premier paquet que le récepteu
 int stop_index = 0 ; // dernier indice dans le dernier paquet que le récepteur doit interpréter
 int start_packet = 0  ; // id du premier paquet que le récepteur doit interpréter
 int stop_packet = 0 ; // id du dernier paquet que le récepteur doit interpréter
-unsigned long last_reception = 0 ; 
+unsigned long last_reception = 0 ;
 /**********************************************/
 
 /************** OBJECTS ***********************/
@@ -99,7 +100,7 @@ RFM69 radio = RFM69(RFM69_CS, RFM69_IRQ, IS_RFM69HCW, RFM69_IRQN); // Création 
 //________________SETUP______________________
 void setup() {
   SYSTEM_INIT() ; // initialise the hardware
-  black_strip() ; 
+  black_strip() ;
   find_index() ; // détermine start_index, start_index, start_packet et stop_packet  ;
   state = start_packet ; // initializes the state machine
 #ifdef DEBUG_CONFIG
@@ -116,17 +117,17 @@ void loop() {
   //check if something was received (could be an interrupt from the radio)
   if (radio.receiveDone())
   {
-    last_reception = millis() ; 
+    last_reception = millis() ;
     packet_id = radio.DATA[0] ; // the first byte give the packet ID sent
 #ifdef DEBUG
-  //Serial.print("[RX_RSSI:"); Serial.print(radio.RSSI); Serial.println("]");
+    //Serial.print("[RX_RSSI:"); Serial.print(radio.RSSI); Serial.println("]");
     Serial.print("packet_id received: ") ; Serial.println(packet_id) ;
 #endif
-    
+
     radio.receiveDone(); //put radio in RX mode // voir si nécessaire
   }
-   _noDataSince() ; 
- 
+  _noDataSince() ;
+
 
 
   if (packet_id == state) { // check if the packet received is the one we are waiting for
@@ -136,10 +137,10 @@ void loop() {
     // start_pixel = (packet_id - 1) * PIXELS_PER_PACKET ;
 
     if (state == stop_packet) { // si le paquet reçu est le dernier paquet exigé
-       digitalWrite(LED1, LOW) ;
+      digitalWrite(LED1, LOW) ;
       prepare_pixel_color1(1, stop_index, packet_id) ;
-      pixels.show(); // on met à jour les pîxels de la bande
-      state = start_packet ; // on retourne à l'état initial : attendre le premier paquet
+      state = FINAL_PACKET ;
+      
 #ifdef DEBUG
       Serial.print("Wait for packet ") ; Serial.print(state) ; Serial.println("...") ;
 #endif
@@ -148,12 +149,16 @@ void loop() {
 #endif
     }
     else if (state == start_packet) { // si le paquet reçu est le premier paquet exigé
-       digitalWrite(LED1, HIGH) ;
+      digitalWrite(LED1, HIGH) ;
       prepare_pixel_color1(start_index, PACKET_SIZE, packet_id) ;
       state++ ; // on attend le paquet suivant
 #ifdef DEBUG
       Serial.print("Wait for packet ") ; Serial.print(state) ; Serial.println("...") ;
 #endif
+    }
+    else if (state== FINAL_PACKET ) {
+      pixels.show(); // on met à jour les pîxels de la bande
+      state = start_packet ; // on retourne à l'état initial : attendre le premier paquet
     }
     else {
       prepare_pixel_color1(1, PACKET_SIZE, packet_id) ;
@@ -163,6 +168,9 @@ void loop() {
 #endif
     }
   }
+//  else if (packet_id == FINAL_PACKET){
+//    
+//  }
 
   Serial.flush(); //make sure all serial data is clocked out before sleeping the MCU // voir si nécessaire
 }
@@ -185,13 +193,13 @@ void prepare_pixel_color1(int start_indice, int stop_indice, int packet_ID) {
     }
     pixels.setPixelColor((i + 2) / 3 + pixel_offset, pixels.Color(radio.DATA[i], radio.DATA[i + 1], radio.DATA[i + 2])); // change the color
 #ifdef DEBUG
-//    Serial.print("Pixel:") ; Serial.print((i + 2) / 3 + pixel_offset) ; Serial.print(": ") ;
-//    Serial.print(radio.DATA[i]) ;
-//    Serial.print(" ") ;
-//    Serial.print(radio.DATA[i + 1]) ;
-//    Serial.print(" ") ;
-//    Serial.print(radio.DATA[i + 2]) ;
-//    Serial.println(" ") ;
+    //    Serial.print("Pixel:") ; Serial.print((i + 2) / 3 + pixel_offset) ; Serial.print(": ") ;
+    //    Serial.print(radio.DATA[i]) ;
+    //    Serial.print(" ") ;
+    //    Serial.print(radio.DATA[i + 1]) ;
+    //    Serial.print(" ") ;
+    //    Serial.print(radio.DATA[i + 2]) ;
+    //    Serial.println(" ") ;
 #endif
   }
 }
@@ -231,15 +239,15 @@ void prepare_pixel_color1(int start_indice, int stop_indice, int packet_ID) {
 void find_index() {
   int packet_index = 1 ;
 
-  while ( packet_index < PACKET_ID_MAX) {
+  while ( packet_index < PACKET_ID_MAX) { // on parcourt les packets pour trouver les indices de déapart et d'arriver
     int channel_inf = (packet_index - 1) * PACKET_SIZE + 1 ;
     int channel_sup = packet_index * PACKET_SIZE ;
     if ( (channel_inf <= DECOR_DMX_ADRESS)   & (DECOR_DMX_ADRESS <= channel_sup)  ) {
-      start_index = DECOR_DMX_ADRESS - ((packet_index - 1) * 60) ;
+      start_index = DECOR_DMX_ADRESS - ((packet_index - 1) * PACKET_SIZE) ;
       start_packet = packet_index ;
     }
     if (  (channel_inf <= LAST_DMX_ADRESS)   & (LAST_DMX_ADRESS <= channel_sup)  ) {
-      stop_index = LAST_DMX_ADRESS - ((packet_index - 1) * 60) ;
+      stop_index = LAST_DMX_ADRESS - ((packet_index - 1) * PACKET_SIZE) ;
       stop_packet = packet_index ;
       break ;
     }
@@ -283,9 +291,9 @@ void SYSTEM_INIT(void) {
   //*****************************************************************
 
   // init serial port for debugging
-#ifdef DEBUG || DEBUG_CONFIG
+  //#ifdef DEBUG || DEBUG_CONFIG
   Serial.begin(SERIAL_BAUD);
-#endif
+  //#endif
   digitalWrite(LED1, LOW) ; // shows that the setup is finished
 }
 
@@ -315,20 +323,20 @@ void print_config(void) {
   Serial.print("stop_index : ") ; Serial.println(stop_index) ; Serial.print("\n") ;
 }
 
-void black_strip(void){
-  for (int i= 0; i<NUMPIXELS; i++){
+void black_strip(void) {
+  for (int i = 0; i < NUMPIXELS; i++) {
     pixels.setPixelColor(i, 0, 0, 0);
     pixels.show(); // on met à jour les pîxels de la bande
   }
 }
 
 bool _noDataSince() {
-  if (millis()-last_reception > NO_DATA_SINCE){
+  if (millis() - last_reception > NO_DATA_SINCE) {
     digitalWrite(RECEPTION, LOW) ;
     return false ;
   }
-  else 
+  else
     digitalWrite(RECEPTION, HIGH) ;
-    return true ;
+  return true ;
 }
 

@@ -3,6 +3,8 @@
 #include <DMXSerial.h>                   // Appel de la librairie SerialDMX
 #include <RFM69.h> //get it here: https://www.github.com/lowpowerlab/rfm69
 
+#include "parameters.h"
+
 #define DEBUG
 
 
@@ -19,7 +21,6 @@
 
 //Match frequency to the hardware version of the radio on your Feather
 #define FREQUENCY RF69_433MHZ
-#define ENCRYPTKEY "sampleEncryptKey" //exactly the same 16 characters/bytes on all nodes!
 #define IS_RFM69HCW true // set to 'true' if you are using an RFM69HCW module
 
 #define RFM69_CS 10 // Chip select
@@ -94,14 +95,14 @@ void _DMX_RFM69_send(void) {
    // digitalWrite(LED,HIGH) ; 
    if (dmx_change()) {
     digitalWrite(LED,HIGH) ; 
+    
+   }
+   else
+    digitalWrite(LED,LOW) ; 
     for (int i = 1 ; i <=PACKET_NBR ; i++){
       build_packet(i); // construction et envoi du paquet i   
       radio.send(NODERECEIVE, (const void*)radiopacket, strlen(radiopacket), false) ; // envoi du paquet de données
     }
-   }
-   else
-    digitalWrite(LED,LOW) ; 
-    
    // digitalWrite(LED,LOW) ;
 }
 
