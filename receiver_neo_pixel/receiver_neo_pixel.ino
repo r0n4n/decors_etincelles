@@ -35,7 +35,7 @@
 /*********************************************************************************************/
 
 //#define DEBUG
-//#define DEBUG_CONFIG
+//  #define DEBUG_CONFIG
 
 //*********************************************************************************************
 // *********** IMPORTANT SETTINGS - YOU MUST CHANGE/ONFIGURE TO FIT YOUR HARDWARE *************
@@ -75,9 +75,9 @@
 #define CHANNELS_PER_PIXEL 3 // RVB
 #define PIX_PER_GROUP 1 // number of pixels together 
 #define PACKET_SIZE 60 // size of a packet received
-#define DECOR_DMX_ADRESS   1 // adresse DMX du récepteur 
+#define DECOR_DMX_ADRESS  301 // adresse DMX du récepteur 
 #define PACKET_ID_MAX 9 // nombre de paquets maximal que peut envoyer l'émetteur (dépend de la taille des paquets)  
-#define FINAL_PACKET 8 
+#define FINAL_PACKET (int)8
 
 #define CHANNELS_NBR (NUMPIXELS*CHANNELS_PER_PIXEL/PIX_PER_GROUP) // on détermine le nombre de canaux nécessaires
 #define LAST_DMX_ADRESS (DECOR_DMX_ADRESS+CHANNELS_NBR-1)
@@ -90,6 +90,7 @@ int stop_index = 0 ; // dernier indice dans le dernier paquet que le récepteur 
 int start_packet = 0  ; // id du premier paquet que le récepteur doit interpréter
 int stop_packet = 0 ; // id du dernier paquet que le récepteur doit interpréter
 unsigned long last_reception = 0 ;
+bool refresh = false ;
 /**********************************************/
 
 /************** OBJECTS ***********************/
@@ -119,16 +120,17 @@ void loop() {
   {
     last_reception = millis() ;
     packet_id = radio.DATA[0] ; // the first byte give the packet ID sent
-//#ifdef DEBUG
+    //#ifdef DEBUG
     //Serial.print("[RX_RSSI:"); Serial.print(radio.RSSI); Serial.println("]");
     //Serial.print("packet_id received: ") ; Serial.println(packet_id) ;
-//#endif
-    if (packet_id==8 ) {
+    //#endif
+    if (packet_id == 8 ) {
       digitalWrite(LED2, HIGH) ;
-      //delay(10) ; 
+      //pixels.show(); // on met à jour les pîxels de la bande
+      //delay(10) ;
     }
     else {
-    
+
       digitalWrite(LED2, LOW) ;
     }
 
@@ -138,49 +140,45 @@ void loop() {
 
 
 
-  if (packet_id == state) { // check if the packet received is the one we are waiting for
-#ifdef DEBUG
+  if ((packet_id == state) ) { // check if the packet received is the one we are waiting for
+
     //Serial.print("packet ") ; Serial.print(packet_id) ; Serial.println(" received") ;
-#endif
     // start_pixel = (packet_id - 1) * PIXELS_PER_PACKET ;
 
-    if (state == stop_packet) { // si le paquet reçu est le dernier paquet exigé
+
+    if ((state == stop_packet) ) { // si le paquet reçu est le dernier paquet exigé
       digitalWrite(LED1, LOW) ;
       prepare_pixel_color1(1, stop_index, packet_id) ;
-      state = FINAL_PACKET ;
-      
-#ifdef DEBUG
+
       //Serial.print("Wait for packet ") ; Serial.print(state) ; Serial.println("...") ;
-#endif
-#ifdef DEBUG
       //Serial.println("Strip updated!") ;
-#endif
+
     }
+
     else if (state == start_packet) { // si le paquet reçu est le premier paquet exigé
       digitalWrite(LED1, HIGH) ;
       prepare_pixel_color1(start_index, PACKET_SIZE, packet_id) ;
       state++ ; // on attend le paquet suivant
-#ifdef DEBUG
       //Serial.print("Wait for packet ") ; Serial.print(state) ; Serial.println("...") ;
-#endif
+
     }
-    else if (state== FINAL_PACKET ) {
-      pixels.show(); // on met à jour les pîxels de la bande
-      state = start_packet ; // on retourne à l'état initial : attendre le premier paquet
-    }
+ 
+
     else {
       prepare_pixel_color1(1, PACKET_SIZE, packet_id) ;
       state++ ; // on attend le paquet suivant
-#ifdef DEBUG
       //Serial.print("Wait for packet ") ; Serial.print(state) ; Serial.println("...") ;
-#endif
     }
   }
-//  else if (packet_id == FINAL_PACKET){
-//    
-//  }
+  if (packet_id == 8 ) {
 
-  Serial.flush(); //make sure all serial data is clocked out before sleeping the MCU // voir si nécessaire
+    pixels.show(); // on met à jour les pîxels de la bande
+    state = start_packet ; // on retourne à l'état initial : attendre le premier paquet
+
+  }
+
+
+  // Serial.flush(); //make sure all serial data is clocked out before sleeping the MCU // voir si nécessaire
 }
 // _________________________________________________________________________
 
@@ -274,7 +272,7 @@ void SYSTEM_INIT(void) {
   pinMode(T2, OUTPUT ) ;
   //******************************************************************
   digitalWrite(LED1, HIGH) ; // set led high to show that the setup has started
-  
+
   //************************ RFM69 INIT ******************************
   // Hard Reset the RFM module
   pinMode(RFM69_RST, OUTPUT);
