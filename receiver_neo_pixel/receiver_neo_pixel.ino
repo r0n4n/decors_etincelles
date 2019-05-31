@@ -75,7 +75,7 @@
 #define CHANNELS_PER_PIXEL 3 // RVB
 #define PIX_PER_GROUP 1 // number of pixels together 
 #define PACKET_SIZE 60 // size of a packet received
-#define DECOR_DMX_ADRESS  301 // adresse DMX du récepteur 
+#define DECOR_DMX_ADRESS  1 // adresse DMX du récepteur 
 #define PACKET_ID_MAX 9 // nombre de paquets maximal que peut envoyer l'émetteur (dépend de la taille des paquets)  
 #define FINAL_PACKET (int)8
 
@@ -149,7 +149,8 @@ void loop() {
     if ((state == stop_packet) ) { // si le paquet reçu est le dernier paquet exigé
       digitalWrite(LED1, LOW) ;
       prepare_pixel_color1(1, stop_index, packet_id) ;
-
+      pixels.show(); // on met à jour les pîxels de la bande
+      state = start_packet ; // on retourne à l'état initial : attendre le premier paquet
       //Serial.print("Wait for packet ") ; Serial.print(state) ; Serial.println("...") ;
       //Serial.println("Strip updated!") ;
 
@@ -170,12 +171,12 @@ void loop() {
       //Serial.print("Wait for packet ") ; Serial.print(state) ; Serial.println("...") ;
     }
   }
-  if (packet_id == 8 ) {
-
-    pixels.show(); // on met à jour les pîxels de la bande
-    state = start_packet ; // on retourne à l'état initial : attendre le premier paquet
-
-  }
+//  if (packet_id == 6 ) {
+//
+//    pixels.show(); // on met à jour les pîxels de la bande
+//    state = start_packet ; // on retourne à l'état initial : attendre le premier paquet
+//
+//  }
 
 
   // Serial.flush(); //make sure all serial data is clocked out before sleeping the MCU // voir si nécessaire
