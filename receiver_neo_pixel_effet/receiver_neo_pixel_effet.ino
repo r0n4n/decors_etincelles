@@ -37,9 +37,9 @@
 #define bas 3 //  pin commande du décor 1 
 #define haut 4 // pin commande du décor 2 
 
-#define BANDE1 5 // pin de la bande LEd a définir
+#define BANDE1 A3 // pin de la bande LEd a définir
 // How many NeoPixels are attached to the Arduino?
-#define NUMPIXELS      30
+#define NUMPIXELS      50
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, BANDE1, NEO_GRB + NEO_KHZ800);
 RFM69 radio = RFM69(RFM69_CS, RFM69_IRQ, IS_RFM69HCW, RFM69_IRQN);
@@ -120,13 +120,19 @@ void loop() {
     }
     pixels.show();*/
   }
-  if (radio.DATA[1]>128) 
+  colorWipe(pixels.Color(255, 0, 0), 50); // Red
+  delay(1000);
+  colorWipe(pixels.Color(0, 255, 0), 50); // Green
+  delay(1000);
+  colorWipe(pixels.Color(0, 0, 255), 50); // Blue
+  delay(1000);
+  /*if (radio.DATA[1]>128) 
       //colorWipe(pixels.Color(255, 0, 0), 50); // Red
       //rainbow(20);
       theaterChaseRainbow(50);
     else 
       //colorWipe(pixels.Color(0, 255, 0), 50); // Green
-      rainbowCycle(20);
+      rainbowCycle(20);*/
      
   digitalWrite(reception, LOW) ;
   //radio.receiveDone(); //put radio in RX mode
