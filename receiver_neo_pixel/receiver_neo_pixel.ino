@@ -20,7 +20,7 @@
     Une fois le programme initialisée le machine d'état va attendre le premier packet dont il a besoin.
     Une fois reçu, il prépare la couleur des pixels puis il attend le packet suivant jusqu'a recevoir le dernier dont il a besoin.
     Tous les packets ne corespondant pas à celui attendu à un moment donnée sont ignorés. (piste d'amélioration)
-    Une fois tous les paquets nécessaires reçu, les nouvelles couleurs sont envoyés à la bande numérique puis le programme va attendre de nouveau le premier paquet.
+    Une fois tous les paquets nécessaires reçu, les nouvelles couleurs sont envoyées à la bande numérique puis le programme va attendre de nouveau le premier paquet.
  *****************************************************************/
 
 /************** *************   INCLUDES LIBRARY ********************************************/
@@ -183,6 +183,7 @@ void loop() {
 }
 // _________________________________________________________________________
 
+// Cette fonction reconstitue la trame DMX afin de contrôler la bande LED selon l'adressage
 void prepare_pixel_color1(int start_indice, int stop_indice, int packet_ID) {
   // Serial.println("prepare_pixel_color1 launched") ;
   //int pixel_offset = ((packet_ID-1)*PACKET_SIZE-DECOR_DMX_ADRESS)/CHANNELS_PER_PIXEL  ;
@@ -246,7 +247,7 @@ void prepare_pixel_color1(int start_indice, int stop_indice, int packet_ID) {
 void find_index() {
   int packet_index = 1 ;
 
-  while ( packet_index < PACKET_ID_MAX) { // on parcourt les packets pour trouver les indices de déapart et d'arriver
+  while ( packet_index < PACKET_ID_MAX) { // on parcourt les packets pour trouver les indices de départ et d'arriver
     int channel_inf = (packet_index - 1) * PACKET_SIZE + 1 ;
     int channel_sup = packet_index * PACKET_SIZE ;
     if ( (channel_inf <= DECOR_DMX_ADRESS)   & (DECOR_DMX_ADRESS <= channel_sup)  ) {
