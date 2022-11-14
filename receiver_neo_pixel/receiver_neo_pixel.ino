@@ -34,7 +34,7 @@
 #endif
 /*********************************************************************************************/
 
-//#define DEBUG
+#define DEBUG
 //  #define DEBUG_CONFIG
 
 //*********************************************************************************************
@@ -77,7 +77,7 @@
 #define PACKET_SIZE 60 // size of a packet received
 #define DECOR_DMX_ADRESS  1 // adresse DMX du récepteur 
 #define PACKET_ID_MAX 9 // nombre de paquets maximal que peut envoyer l'émetteur (dépend de la taille des paquets)  
-#define FINAL_PACKET (int)8
+#define PACKET_NBR 8 // nombre de paquets envoyés par l'emetteur 
 
 #define CHANNELS_NBR (NUMPIXELS*CHANNELS_PER_PIXEL/PIX_PER_GROUP) // on détermine le nombre de canaux nécessaires
 #define LAST_DMX_ADRESS (DECOR_DMX_ADRESS+CHANNELS_NBR-1)
@@ -85,12 +85,17 @@
 /*************** VARIABLES ********************/
 int state ; // L'id du paquet qui est attendu
 int packet_id ; // L'id du paquet qui vient d'être reçu
+int last_packet_id ; // ID du dernier paquet reçu 
+bool paquet_perdu = false; // True si un paquet n'a pas été reçu, false sinon
+int nbr_paquet_perdu = 0; // compteur du nombre de paquets perdu 
 int start_index = 0  ; // premier indice dans le premier paquet que le récepteur doit interpréter
 int stop_index = 0 ; // dernier indice dans le dernier paquet que le récepteur doit interpréter
 int start_packet = 0  ; // id du premier paquet que le récepteur doit interpréter
 int stop_packet = 0 ; // id du dernier paquet que le récepteur doit interpréter
 unsigned long last_reception = 0 ;
+unsigned long package_rcv_delta_t = 0 ; // delta t entre deux réceptions de packet 
 bool refresh = false ;
+bool first_iter = true ; 
 /**********************************************/
 
 /************** OBJECTS ***********************/
@@ -114,17 +119,18 @@ void setup() {
 //___________________________________________
 
 //______________ LOOP _______________________
-void loop() {
+void loop() {  
+  
   //check if something was received (could be an interrupt from the radio)
   if (radio.receiveDone())
   {
     last_reception = millis() ;
     packet_id = radio.DATA[0] ; // the first byte give the packet ID sent
-    //#ifdef DEBUG
-    //Serial.print("[RX_RSSI:"); Serial.print(radio.RSSI); Serial.println("]");
+    #ifdef DEBUG
+      Serial.print("[RX_RSSI:"); Serial.print(radio.RSSI); Serial.println("]");
     //Serial.print("packet_id received: ") ; Serial.println(packet_id) ;
-    //#endif
-    if (packet_id == 8 ) {
+    #endif
+    if (packet_id == PACKET_NBR ) {
       digitalWrite(LED2, HIGH) ;
       //pixels.show(); // on met à jour les pîxels de la bande
       //delay(10) ;
@@ -137,6 +143,17 @@ void loop() {
     radio.receiveDone(); //put radio in RX mode // voir si nécessaire
   }
   _noDataSince() ;
+  check_paquet_perdu();
+  
+  #ifdef DEBUG
+    Serial.print("Période réception paquet :") ; Serial.print(package_rcv_delta_t) ; Serial.println(" ms") ; 
+    Serial.print("Etat trame : ") ; 
+    if (paquet_perdu)
+      Serial.println("NOK") ;
+    else
+      Serial.println("OK") ;   
+    Serial.print("Nbr de paquets perdu :") ; Serial.println(nbr_paquet_perdu) ;
+  #endif
 
 
 
@@ -171,15 +188,9 @@ void loop() {
       //Serial.print("Wait for packet ") ; Serial.print(state) ; Serial.println("...") ;
     }
   }
-//  if (packet_id == 6 ) {
-//
-//    pixels.show(); // on met à jour les pîxels de la bande
-//    state = start_packet ; // on retourne à l'état initial : attendre le premier paquet
-//
-//  }
-
-
   // Serial.flush(); //make sure all serial data is clocked out before sleeping the MCU // voir si nécessaire
+  if (first_iter == true) 
+    first_iter = false;
 }
 // _________________________________________________________________________
 
@@ -339,12 +350,25 @@ void black_strip(void) {
 }
 
 bool _noDataSince() {
-  if (millis() - last_reception > NO_DATA_SINCE) {
+  package_rcv_delta_t = millis() - last_reception;  
+  if (package_rcv_delta_t > NO_DATA_SINCE) {
     digitalWrite(RECEPTION, LOW) ;
     return false ;
   }
   else
     digitalWrite(RECEPTION, HIGH) ;
   return true ;
+}
+
+void check_paquet_perdu(){
+  if (first_iter == false){ 
+    if ((packet_id == 1 & last_packet_id == PACKET_NBR) || (packet_id ==(last_packet_id +1))){
+      paquet_perdu = false;
+    }
+    else 
+      paquet_perdu = true;   
+      nbr_paquet_perdu = nbr_paquet_perdu + 1;
+  }
+  last_packet_id = packet_id;
 }
 
