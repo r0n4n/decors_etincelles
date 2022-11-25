@@ -34,7 +34,7 @@
 #endif
 /*********************************************************************************************/
 
-#define DEBUG
+//#define DEBUG
 //  #define DEBUG_CONFIG
 
 //*********************************************************************************************
@@ -77,7 +77,7 @@
 #define PACKET_SIZE 60 // size of a packet received
 #define DECOR_DMX_ADRESS  1 // adresse DMX du récepteur 
 #define PACKET_ID_MAX 9 // nombre de paquets maximal que peut envoyer l'émetteur (dépend de la taille des paquets)  
-#define PACKET_NBR 8 // nombre de paquets envoyés par l'emetteur 
+#define PACKET_NBR (int)8 // nombre de paquets envoyés par l'emetteur 
 
 #define CHANNELS_NBR (NUMPIXELS*CHANNELS_PER_PIXEL/PIX_PER_GROUP) // on détermine le nombre de canaux nécessaires
 #define LAST_DMX_ADRESS (DECOR_DMX_ADRESS+CHANNELS_NBR-1)
@@ -109,9 +109,9 @@ void setup() {
   black_strip() ;
   find_index() ; // détermine start_index, start_index, start_packet et stop_packet  ;
   state = start_packet ; // initializes the state machine
-#ifdef DEBUG_CONFIG
-  print_config() ; // AFFICHE LES INFOS DU MODULES
-#endif
+//#ifdef DEBUG_CONFIG
+//  print_config() ; // AFFICHE LES INFOS DU MODULES
+//#endif
 #ifdef DEBUG
   Serial.print("Wait for packet ") ; Serial.print(state) ; Serial.println("...") ;
 #endif
@@ -126,10 +126,10 @@ void loop() {
   {
     last_reception = millis() ;
     packet_id = radio.DATA[0] ; // the first byte give the packet ID sent
-    #ifdef DEBUG
-      Serial.print("[RX_RSSI:"); Serial.print(radio.RSSI); Serial.println("]");
+    //#ifdef DEBUG
+     // Serial.print("[RX_RSSI:"); Serial.print(radio.RSSI); Serial.println("]");
     //Serial.print("packet_id received: ") ; Serial.println(packet_id) ;
-    #endif
+   // #endif
     if (packet_id == PACKET_NBR ) {
       digitalWrite(LED2, HIGH) ;
       //pixels.show(); // on met à jour les pîxels de la bande
@@ -146,13 +146,13 @@ void loop() {
   check_paquet_perdu();
   
   #ifdef DEBUG
-    Serial.print("Période réception paquet :") ; Serial.print(package_rcv_delta_t) ; Serial.println(" ms") ; 
-    Serial.print("Etat trame : ") ; 
-    if (paquet_perdu)
-      Serial.println("NOK") ;
-    else
-      Serial.println("OK") ;   
-    Serial.print("Nbr de paquets perdu :") ; Serial.println(nbr_paquet_perdu) ;
+  //Serial.print("Période réception paquet :") ; Serial.print(package_rcv_delta_t) ; Serial.println(" ms") ; 
+//    Serial.print("Etat trame : ") ; 
+//    if (paquet_perdu)
+//      Serial.println("NOK") ;
+//    else
+//      Serial.println("OK") ;   
+//    Serial.print("Nbr de paquets perdu :") ; Serial.println(nbr_paquet_perdu) ;
   #endif
 
 
@@ -187,6 +187,12 @@ void loop() {
       state++ ; // on attend le paquet suivant
       //Serial.print("Wait for packet ") ; Serial.print(state) ; Serial.println("...") ;
     }
+  }
+  if (packet_id == 6 ) {
+
+    pixels.show(); // on met à jour les pîxels de la bande
+    state = start_packet ; // on retourne à l'état initial : attendre le premier paquet
+
   }
   // Serial.flush(); //make sure all serial data is clocked out before sleeping the MCU // voir si nécessaire
   if (first_iter == true) 
