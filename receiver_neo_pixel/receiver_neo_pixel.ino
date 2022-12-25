@@ -36,7 +36,7 @@
 
 //________________SETUP______________________
 void setup() {
-  SYSTEM_INIT() ; // initialise the hardware
+  initialisation() ; // initialise the hardware
   black_strip() ;
   find_index() ; // détermine start_index, start_index, start_packet et stop_packet  ;
   state = start_packet ; // initializes the state machine
@@ -216,9 +216,7 @@ void find_index() {
   }
 }
 
-
-void SYSTEM_INIT(void) {
-
+void IOinit(void){
   //**************** CONFIG DES ENTREES/SORTIES *************
   pinMode(LED1, OUTPUT);
   pinMode(LED2, OUTPUT);
@@ -226,8 +224,9 @@ void SYSTEM_INIT(void) {
   pinMode(T1, OUTPUT) ;
   pinMode(T2, OUTPUT ) ;
   //******************************************************************
-  digitalWrite(LED1, HIGH) ; // set led high to show that the setup has started
+}
 
+void wireless_init(void){
   //************************ RFM69 INIT ******************************
   // Hard Reset the RFM module
   pinMode(RFM69_RST, OUTPUT);
@@ -243,14 +242,23 @@ void SYSTEM_INIT(void) {
   radio.setPowerLevel(31); // power output ranges from 0 (5dBm) to 31 (20dBm)
   radio.encrypt(ENCRYPTKEY); // set the ENCRYPTKEY
   //*****************************************************************
+}
 
-  //************* NEOPIXEL SETTINGS *********************************
+void stripLed_init(){
+   //************* NEOPIXEL SETTINGS *********************************
 #if defined (__AVR_ATtiny85__)
   if (F_CPU == 16000000) clock_prescale_set(clock_div_1);
 #endif
   pixels.begin(); // This initializes the NeoPixel library.
   //*****************************************************************
+}
 
+void initialisation(void) {
+
+  IOinit();
+  digitalWrite(LED1, HIGH) ; // set led high to show that the setup has started
+  wireless_init();
+  stripLed_init();
   // init serial port for debugging
   //#ifdef DEBUG || DEBUG_CONFIG
   Serial.begin(SERIAL_BAUD);
