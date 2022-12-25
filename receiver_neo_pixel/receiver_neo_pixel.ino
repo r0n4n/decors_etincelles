@@ -24,49 +24,15 @@
  *****************************************************************/
 
 /************** *************   INCLUDES LIBRARY ********************************************/
-#include <RFM69.h> //get it here: https://www.github.com/lowpowerlab/rfm69
-#include <Adafruit_NeoPixel.h>
-
 #include "parameters.h"
-
-#ifdef __AVR__
-#include <avr/power.h>
-#endif
+#include "hardware.h"
 /*********************************************************************************************/
 
 //#define DEBUG
 //  #define DEBUG_CONFIG
 
-//*********************************************************************************************
-// *********** IMPORTANT SETTINGS - YOU MUST CHANGE/ONFIGURE TO FIT YOUR HARDWARE *************
-//*********************************************************************************************
-//*********************   DEFINE OUT/IN PINS **************************
-// RFM69 PINS
-#define RFM69_CS 10 // CHIP SELECT PIN
-#define RFM69_IRQ 2 // pin IRQ
-#define RFM69_IRQN 0 // Pin 2 is IRQ 0!
-#define RFM69_RST 9 // RST PIN 
 
-// HARDWARE OUTPUTS
-#define LED1 6
-#define LED2 7
-#define LED3 8
-#define T1 3 // Transistor 1 
-#define T2 4 // Transistor 2 
-#define BANDE1 A3 // pin pour contrôler la bande Led
-
-#define RECEPTION LED3 // la led clignote dès que le récepteur reçoit un message 
-//********************************************************************************************
-
-// ***************** NETWORKS PARAMETERS BETWEEN RFM69 *********************
-//**************************************************************************
-#define NETWORKID 100 //the same on all nodes that talk to each other
-#define NODEID 2 // L'adresse réseau du récepteur 
-#define FREQUENCY RF69_433MHZ //Match frequency to the hardware version of the radio on your Feather
-#define IS_RFM69HCW true // set to 'true' if you are using an RFM69HCW module
 #define NO_DATA_SINCE 60
-
-//************************************************************************************
 #define SERIAL_BAUD 115200
 
 
