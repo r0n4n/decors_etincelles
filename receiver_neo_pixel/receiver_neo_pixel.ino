@@ -37,7 +37,6 @@
 //________________SETUP______________________
 void setup() {
   initialisation() ; // initialise the hardware
-  black_strip() ;
   find_index() ; // détermine start_index, start_index, start_packet et stop_packet  ;
   state = start_packet ; // initializes the state machine
 //#ifdef DEBUG_CONFIG
@@ -251,6 +250,7 @@ void stripLed_init(){
 #endif
   pixels.begin(); // This initializes the NeoPixel library.
   //*****************************************************************
+  black_strip() ;
 }
 
 void initialisation(void) {
