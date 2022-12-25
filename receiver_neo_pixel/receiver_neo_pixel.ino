@@ -51,6 +51,11 @@ void setup() {
 
 //______________ LOOP _______________________
 void loop() {  
+  execution();
+}
+
+
+void execution() {  
   
   //check if something was received (could be an interrupt from the radio)
   if (radio.receiveDone())
