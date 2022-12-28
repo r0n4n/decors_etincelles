@@ -51,6 +51,38 @@ void setup() {
 //______________ LOOP _______________________
 void loop() {  
   execution();
+  //printReception();
+  
+  //Serial.println("Hello");
+ 
+}
+
+void printReception() {
+  digitalWrite(RECEPTION, HIGH) ;
+  //Serial.flush();
+  //Serial.print('[');Serial.print(radio.SENDERID, DEC);Serial.print("] ");
+    
+  if (radio.receiveDone())
+  {
+    //Serial.flush();
+    
+    //Serial.print('[');Serial.print(radio.SENDERID, DEC);Serial.print("] ");
+    //Serial.print(" [RX_RSSI:");Serial.print(radio.readRSSI());Serial.print("]");
+    
+    delay(100);
+    digitalWrite(RECEPTION, LOW) ;
+    delay(100);
+   // Blink(RECEPTION,100);
+   packet_id = radio.DATA[0] ; // the first byte give the packet ID sent
+   
+   radio.receiveDone(); //put radio in RX mode // voir si nécessaire
+   //Serial.println("Hello");
+   }
+  else {
+    Serial.println("Waiting for data...");
+    Serial.println(radio._mode);
+  
+  }
 }
 
 
@@ -78,7 +110,7 @@ void execution() {
     radio.receiveDone(); //put radio in RX mode // voir si nécessaire
   }
   _noDataSince() ;
-  check_paquet_perdu();
+  //check_paquet_perdu();
   
   #ifdef DEBUG
   //Serial.print("Période réception paquet :") ; Serial.print(package_rcv_delta_t) ; Serial.println(" ms") ; 
@@ -320,5 +352,14 @@ void check_paquet_perdu(){
       nbr_paquet_perdu = nbr_paquet_perdu + 1;
   }
   last_packet_id = packet_id;
+}
+
+void Blink(byte PIN, int DELAY_MS)
+{
+  pinMode(PIN, OUTPUT);
+  digitalWrite(PIN,HIGH);
+  delay(DELAY_MS);
+  digitalWrite(PIN,LOW);
+  delay(DELAY_MS);
 }
 

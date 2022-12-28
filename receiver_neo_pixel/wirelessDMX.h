@@ -1,7 +1,7 @@
 #ifndef wirelessDMX_h
 #define wirelessDMX_h
 
-#define NO_DATA_SINCE 60
+#define NO_DATA_SINCE 3000
 
 // How many NeoPixels are attached to the Arduino?
 #define NUMPIXELS      50.0
