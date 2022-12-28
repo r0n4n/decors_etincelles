@@ -29,6 +29,7 @@
 #include "wirelessDMX.h"
 /*********************************************************************************************/
 
+int mode = 1 ; // 1=receiver ; 2= transmitter
 //#define DEBUG
 //  #define DEBUG_CONFIG
 
@@ -49,11 +50,18 @@ void setup() {
 //___________________________________________
 
 //______________ LOOP _______________________
-void loop() {  
-  checkCom();
-  traitement();
-  //sendRFMPacket();
-  //printReception();
+void loop() { 
+  switch (mode){
+    case 1: 
+      checkCom();
+      traitement();
+      break;
+      //printReception();
+    case 2:
+      sendRFMPacket();
+      break;
+   }
+
 }
 
 void printReception() {

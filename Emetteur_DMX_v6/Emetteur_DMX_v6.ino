@@ -1,6 +1,14 @@
 // Programme permettant la lecture de la tram DMX et envoit des données par liaison RF a tous les décors
 
+#define DMX
+
+#ifdef DMX
 #include <DMXSerial.h>                   // Appel de la librairie SerialDMX
+int mode = 1 ; // 1==DMX transmitter ; 2 == Receiver
+#else 
+int mode = 2 ; // 1==DMX transmitter ; 2 == Receiver
+#endif
+
 #include <RFM69.h> //get it here: https://www.github.com/lowpowerlab/rfm69
 
 #include "parameters.h"
@@ -41,6 +49,7 @@
 #define PACKET_NBR 8 // nombre paquet que l'on souhaite envoyer 
 #define PACKET_AVAILABLE 8 // nombre de paquets qui décomposent l'ensemble des canaux DMX 
 #define NO_DATA_SINCE 3000
+#define SERIAL_BAUD 115200
 /*************************************************************/
 
 uint8_t radiopacket[PACKET_SIZE_PLUS_ID] ;
@@ -49,6 +58,8 @@ uint8_t last_dmx_channels[513] ;
 int indice_packet = 1 ;
 unsigned long last_reception = 0 ;
 unsigned long package_rcv_delta_t = 0 ; // delta t entre deux réceptions de packet 
+unsigned long iterations = 0; 
+unsigned long decimation = 100000;
 
 
 RFM69 radio = RFM69(RFM69_CS, RFM69_IRQ, IS_RFM69HCW, RFM69_IRQN);
@@ -56,18 +67,41 @@ RFM69 radio = RFM69(RFM69_CS, RFM69_IRQ, IS_RFM69HCW, RFM69_IRQN);
 void setup () { // Configuration au démarrage
   IOinit();
   wireless_init();
-  DMX_init();
+  
+  switch (mode){
+    case 1: 
+    #ifdef DMX
+      DMX_init();
+    #endif
+    case 2:
+    #ifndef DMX
+      Serial.begin(SERIAL_BAUD);
+    #endif
+      break;
+  }
 }
 
 
 void loop () { // Boucle du programme principal
   //_DMX_RFM69_send() ;
   //debug_channels_change() ;
-  checkDMXCom(); 
-  //checkRFMReception();
+  switch (mode){
+    case 1: 
+    #ifdef DMX
+      checkDMXCom(); 
+    #endif
+      break;
+    case 2:
+    #ifndef DMX
+      checkRFMReception();
+    #endif
+      break;
+  }
+  
 }
 
 /********* Envoi les paquets l'un après l'autre *******/
+#ifdef DMX
 void _DMX_RFM69_send(void) {
    // digitalWrite(LED,HIGH) ; 
    if (dmx_change()) {
@@ -131,6 +165,23 @@ void checkDMXCom(void){
     digitalWrite(LEDMX, HIGH);
 }
 
+void DMX_init(void){
+  DMXSerial.init(DMXReceiver);          // Initialise la carte comme un récepteur DMX
+  DMXSerial.attachOnUpdate(_DMX_RFM69_send) ; // Run the _DMX_RFM69_send function each time that a new DMX packet is received
+  //DMXSerial.attachOnUpdate(debug_channels_change) ; 
+}
+
+/********************************DEBUG FUNCTION ***********************/
+
+
+/** cette function fait varier la luminosité d'une led en fonction de la valeur du canal canal choisi.
+* peut être utile pour vérifier la bonne lecture de la trame DMX **/
+void debug_channels_change(void) {  
+  analogWrite(LED, DMXSerial.read(1)) ;
+}
+/************************************************************************/
+#endif
+
 void IOinit(void){
   pinMode(LED, OUTPUT);
   pinMode(LEDMX, OUTPUT);
@@ -154,20 +205,29 @@ void wireless_init(void){
   radio.encrypt(ENCRYPTKEY);
 }
 
-void DMX_init(void){
-  DMXSerial.init(DMXReceiver);          // Initialise la carte comme un récepteur DMX
-  DMXSerial.attachOnUpdate(_DMX_RFM69_send) ; // Run the _DMX_RFM69_send function each time that a new DMX packet is received
-  //DMXSerial.attachOnUpdate(debug_channels_change) ; 
-}
 
+#ifndef DMX
 void checkRFMReception(){
   if (radio.receiveDone())
-  { 
+  {     
     last_reception = millis() ;
     radio.receiveDone(); //put back the radio in RX mode
   }
   _noDataSince();
+  
+  if (iterations>=decimation){
+    iterations=0;
+    //Serial.println("Hello");
+    //Serial.print('SENDERID: ');Serial.println(radio.SENDERID, DEC);
+    //Serial.print(" [RX_RSSI:");Serial.print(radio.readRSSI());Serial.println("]");
+    //Serial.print("Période réception paquet :") ; Serial.print(package_rcv_delta_t) ; Serial.println(" ms") ;
+  }
+  else {
+    //Serial.println(iterations);
+    iterations= iterations + 1;
+  }  
 }
+#endif
 
 void _noDataSince() {
   package_rcv_delta_t = millis() - last_reception;  
@@ -187,12 +247,4 @@ void Blink(byte PIN, int DELAY_MS)
 }
 
 
-/********************************DEBUG FUNCTION ***********************/
 
-
-/** cette function fait varier la luminosité d'une led en fonction de la valeur du canal canal choisi.
-* peut être utile pour vérifier la bonne lecture de la trame DMX **/
-void debug_channels_change(void) {  
-  analogWrite(LED, DMXSerial.read(1)) ;
-}
-/************************************************************************/
