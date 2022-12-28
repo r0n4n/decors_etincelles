@@ -50,33 +50,9 @@ int indice_packet = 1 ;
 RFM69 radio = RFM69(RFM69_CS, RFM69_IRQ, IS_RFM69HCW, RFM69_IRQN);
 
 void setup () { // Configuration au démarrage
-  DMXSerial.init(DMXReceiver);          // Initialise la carte comme un récepteur DMX
-
-  pinMode(LED, OUTPUT);
-  pinMode(LEDMX, OUTPUT);
-  pinMode(DEBUGPIN, OUTPUT) ;
-
-  digitalWrite(LEDMX,HIGH) ;
-//  digitalWrite(LED,HIGH) ;  
-
-  // Hard Reset the RFM module
-  pinMode(RFM69_RST, OUTPUT);
-  digitalWrite(RFM69_RST, HIGH);
-  delay(100);
-  digitalWrite(RFM69_RST, LOW);
-  delay(100);
-
-  // Initialize radio
-  radio.initialize(FREQUENCY, NODEID, NETWORKID);
-  if (IS_RFM69HCW) {
-    radio.setHighPower(); // Only for RFM69HCW & HW!
-  }
-  radio.setPowerLevel(31); // power output ranges from 0 (5dBm) to 31 (20dBm)
-  radio.encrypt(ENCRYPTKEY);
-  
-  DMXSerial.attachOnUpdate(_DMX_RFM69_send) ; // Run the _DMX_RFM69_send function each time that a new DMX packet is received
-  //DMXSerial.attachOnUpdate(debug_channels_change) ; 
-  
+  IOinit();
+  wireless_init();
+  DMX_init();
 }
 
 
@@ -144,6 +120,36 @@ bool dmx_change(){
     last_dmx_channels[i] =  DMXSerial.read(i) ; 
   }
   return change ; 
+}
+
+
+void IOinit(void){
+  pinMode(LED, OUTPUT);
+  pinMode(LEDMX, OUTPUT);
+  pinMode(DEBUGPIN, OUTPUT) ;
+}
+
+void wireless_init(void){
+  // Hard Reset the RFM module
+  pinMode(RFM69_RST, OUTPUT);
+  digitalWrite(RFM69_RST, HIGH);
+  delay(100);
+  digitalWrite(RFM69_RST, LOW);
+  delay(100);
+
+  // Initialize radio
+  radio.initialize(FREQUENCY, NODEID, NETWORKID);
+  if (IS_RFM69HCW) {
+    radio.setHighPower(); // Only for RFM69HCW & HW!
+  }
+  radio.setPowerLevel(31); // power output ranges from 0 (5dBm) to 31 (20dBm)
+  radio.encrypt(ENCRYPTKEY);
+}
+
+void DMX_init(void){
+  DMXSerial.init(DMXReceiver);          // Initialise la carte comme un récepteur DMX
+  DMXSerial.attachOnUpdate(_DMX_RFM69_send) ; // Run the _DMX_RFM69_send function each time that a new DMX packet is received
+  //DMXSerial.attachOnUpdate(debug_channels_change) ; 
 }
 
 /********************************DEBUG FUNCTION ***********************/
