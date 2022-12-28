@@ -29,6 +29,7 @@ unsigned long last_reception = 0 ;
 unsigned long package_rcv_delta_t = 0 ; // delta t entre deux réceptions de packet 
 bool refresh = false ;
 bool first_iter = true ; 
+bool bPacketRcv = false;
 /**********************************************/
 
 /************** OBJECTS ***********************/

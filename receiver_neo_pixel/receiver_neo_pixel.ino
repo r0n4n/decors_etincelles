@@ -50,7 +50,8 @@ void setup() {
 
 //______________ LOOP _______________________
 void loop() {  
-  execution();
+  checkCom();
+  traitement();
   //printReception();
   
   //Serial.println("Hello");
@@ -85,44 +86,18 @@ void printReception() {
   }
 }
 
-
-void execution() {  
+void traitement() {  
   
   //check if something was received (could be an interrupt from the radio)
-  if (radio.receiveDone())
+  if (bPacketRcv)
   {
-    last_reception = millis() ;
-    packet_id = radio.DATA[0] ; // the first byte give the packet ID sent
-    //#ifdef DEBUG
-     // Serial.print("[RX_RSSI:"); Serial.print(radio.RSSI); Serial.println("]");
-    //Serial.print("packet_id received: ") ; Serial.println(packet_id) ;
-   // #endif
     if (packet_id == PACKET_NBR ) {
       digitalWrite(LED2, HIGH) ;
-      //pixels.show(); // on met à jour les pîxels de la bande
-      //delay(10) ;
     }
     else {
-
       digitalWrite(LED2, LOW) ;
     }
-
-    radio.receiveDone(); //put radio in RX mode // voir si nécessaire
   }
-  _noDataSince() ;
-  //check_paquet_perdu();
-  
-  #ifdef DEBUG
-  //Serial.print("Période réception paquet :") ; Serial.print(package_rcv_delta_t) ; Serial.println(" ms") ; 
-//    Serial.print("Etat trame : ") ; 
-//    if (paquet_perdu)
-//      Serial.println("NOK") ;
-//    else
-//      Serial.println("OK") ;   
-//    Serial.print("Nbr de paquets perdu :") ; Serial.println(nbr_paquet_perdu) ;
-  #endif
-
-
 
   if ((packet_id == state) ) { // check if the packet received is the one we are waiting for
 
@@ -165,6 +140,31 @@ void execution() {
   if (first_iter == true) 
     first_iter = false;
 }
+
+
+void checkCom(void){
+  //check if something was received
+  bPacketRcv = radio.receiveDone();
+  if (bPacketRcv)
+  { 
+    packet_id = radio.DATA[0] ; // the first byte give the packet ID sent
+    last_reception = millis() ;
+    radio.receiveDone(); //put back the radio in RX mode
+  }
+  _noDataSince() ; // display the com status with the LED
+
+    
+  #ifdef DEBUG
+  //Serial.print("Période réception paquet :") ; Serial.print(package_rcv_delta_t) ; Serial.println(" ms") ; 
+//    Serial.print("Etat trame : ") ; 
+//    if (paquet_perdu)
+//      Serial.println("NOK") ;
+//    else
+//      Serial.println("OK") ;   
+//    Serial.print("Nbr de paquets perdu :") ; Serial.println(nbr_paquet_perdu) ;
+  #endif
+}
+
 // _________________________________________________________________________
 
 // Cette fonction reconstitue la trame DMX afin de contrôler la bande LED selon l'adressage
@@ -196,37 +196,7 @@ void prepare_pixel_color1(int start_indice, int stop_indice, int packet_ID) {
   }
 }
 
-//void prepare_pixel_color(int start_pixel, int pixel_number) {
-//  for (int i = 0; i < pixel_number  ; i++) {
-//    pixels.setPixelColor(i + start_pixel, pixels.Color(radio.DATA[3 * i + 1], radio.DATA[3 * i + 2], radio.DATA[3 * i + 3])); // change the color
-//#ifdef DEBUG
-//    //          Serial.print("Pixel:") ; Serial.print(i + start_pixel) ; Serial.print(": ") ;
-//    //          Serial.print(radio.DATA[3 * i + 1]) ;
-//    //          Serial.print(" ") ;
-//    //          Serial.print(radio.DATA[3 * i + 2]) ;
-//    //          Serial.print(" ") ;
-//    //          Serial.print(radio.DATA[3 * i + 3]) ;
-//    //          Serial.println(" ") ;
-//#endif
-//  }
-//}
 
-//void prepare_pixel_color3(int start_pixel, int pixel_number) {
-//  for (int i = 0; i < pixel_number  ; i++) {
-//    pixels.setPixelColor(i*3+start_pixel, pixels.Color(radio.DATA[3*i+1], radio.DATA[3*i+2], radio.DATA[3*i+3])); // change the color
-//    pixels.setPixelColor(i*3+1+start_pixel, pixels.Color(radio.DATA[3*i+1], radio.DATA[3*i+2], radio.DATA[3*i+3])); // change the color
-//    pixels.setPixelColor(i*3+2+start_pixel, pixels.Color(radio.DATA[3*i+1], radio.DATA[3*i+2], radio.DATA[3*i+3])); // change the color
-//#ifdef DEBUG
-//    //          Serial.print("Pixel:") ; Serial.print(i + start_pixel) ; Serial.print(": ") ;
-//    //          Serial.print(radio.DATA[3 * i + 1]) ;
-//    //          Serial.print(" ") ;
-//    //          Serial.print(radio.DATA[3 * i + 2]) ;
-//    //          Serial.print(" ") ;
-//    //          Serial.print(radio.DATA[3 * i + 3]) ;
-//    //          Serial.println(" ") ;
-//#endif
-//  }
-//}
 
 void find_index() {
   int packet_index = 1 ;
