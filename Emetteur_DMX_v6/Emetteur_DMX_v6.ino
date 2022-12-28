@@ -40,12 +40,16 @@
 #define PACKET_SIZE_PLUS_ID  PACKET_SIZE+1 // total size of a packet with the ID  
 #define PACKET_NBR 8 // nombre paquet que l'on souhaite envoyer 
 #define PACKET_AVAILABLE 8 // nombre de paquets qui décomposent l'ensemble des canaux DMX 
+#define NO_DATA_SINCE 3000
 /*************************************************************/
 
 uint8_t radiopacket[PACKET_SIZE_PLUS_ID] ;
 uint8_t last_dmx_channels[513] ;
 //int packet_id_list[PACKET_AVAILABLE] = {1, 61, 121, 181, 241, 301, 361, 421, 481} ; // liste des premiers canaux de chaque paquet
 int indice_packet = 1 ;
+unsigned long last_reception = 0 ;
+unsigned long package_rcv_delta_t = 0 ; // delta t entre deux réceptions de packet 
+
 
 RFM69 radio = RFM69(RFM69_CS, RFM69_IRQ, IS_RFM69HCW, RFM69_IRQN);
 
@@ -57,13 +61,9 @@ void setup () { // Configuration au démarrage
 
 
 void loop () { // Boucle du programme principal
-  // vérifie si des données ont été reçues via la liaison DMX
-  if (DMXSerial.noDataSince() > 5)      // LED Reception du signal
-    digitalWrite(LEDMX, LOW);            // Si le signal n'a pas été reçu depuis + de 1 ms, la LED s'éteint
-  else
-    digitalWrite(LEDMX, HIGH);
   //_DMX_RFM69_send() ;
-  //debug_channels_change() ; 
+  //debug_channels_change() ;
+  checkDMXCom(); 
 }
 
 /********* Envoi les paquets l'un après l'autre *******/
@@ -122,6 +122,13 @@ bool dmx_change(){
   return change ; 
 }
 
+void checkDMXCom(void){
+  // vérifie si des données ont été reçues via la liaison DMX
+  if (DMXSerial.noDataSince() > 5)      // LED Reception du signal
+    digitalWrite(LEDMX, LOW);            // Si le signal n'a pas été reçu depuis + de 1 ms, la LED s'éteint
+  else
+    digitalWrite(LEDMX, HIGH);
+}
 
 void IOinit(void){
   pinMode(LED, OUTPUT);
@@ -151,6 +158,33 @@ void DMX_init(void){
   DMXSerial.attachOnUpdate(_DMX_RFM69_send) ; // Run the _DMX_RFM69_send function each time that a new DMX packet is received
   //DMXSerial.attachOnUpdate(debug_channels_change) ; 
 }
+
+void checkReception(){
+  if (radio.receiveDone())
+  { 
+    last_reception = millis() ;
+    radio.receiveDone(); //put back the radio in RX mode
+  }
+  _noDataSince();
+}
+
+void _noDataSince() {
+  package_rcv_delta_t = millis() - last_reception;  
+  if (package_rcv_delta_t > NO_DATA_SINCE) {
+    digitalWrite(LEDMX, LOW) ;
+  }
+  else
+    digitalWrite(LEDMX, HIGH) ;
+}
+
+void Blink(byte PIN, int DELAY_MS)
+{
+  digitalWrite(PIN,HIGH);
+  delay(DELAY_MS);
+  digitalWrite(PIN,LOW);
+  delay(DELAY_MS);
+}
+
 
 /********************************DEBUG FUNCTION ***********************/
 
