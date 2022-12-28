@@ -64,6 +64,7 @@ void loop () { // Boucle du programme principal
   //_DMX_RFM69_send() ;
   //debug_channels_change() ;
   checkDMXCom(); 
+  //checkRFMReception();
 }
 
 /********* Envoi les paquets l'un après l'autre *******/
@@ -159,7 +160,7 @@ void DMX_init(void){
   //DMXSerial.attachOnUpdate(debug_channels_change) ; 
 }
 
-void checkReception(){
+void checkRFMReception(){
   if (radio.receiveDone())
   { 
     last_reception = millis() ;

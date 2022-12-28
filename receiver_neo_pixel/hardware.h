@@ -37,6 +37,7 @@
 
 // ***************** Configuration réseau *********************
 #define NETWORKID 100 //the same on all nodes that talk to each other
+#define TRANSMITTERID 1 // L'adresse réseau de l'émetteur
 #define NODEID 2 // L'adresse réseau du récepteur 
 //***********************************************************************
 

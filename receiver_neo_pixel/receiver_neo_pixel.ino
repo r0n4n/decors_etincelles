@@ -52,10 +52,8 @@ void setup() {
 void loop() {  
   checkCom();
   traitement();
+  //sendRFMPacket();
   //printReception();
-  
-  //Serial.println("Hello");
- 
 }
 
 void printReception() {
@@ -163,6 +161,11 @@ void checkCom(void){
 //      Serial.println("OK") ;   
 //    Serial.print("Nbr de paquets perdu :") ; Serial.println(nbr_paquet_perdu) ;
   #endif
+}
+
+void sendRFMPacket(void){
+  uint8_t radiopacket[61] ;
+  radio.send(TRANSMITTERID, (const void*)radiopacket, strlen(radiopacket), false) ; // envoi du paquet de données
 }
 
 // _________________________________________________________________________
@@ -326,7 +329,6 @@ void check_paquet_perdu(){
 
 void Blink(byte PIN, int DELAY_MS)
 {
-  pinMode(PIN, OUTPUT);
   digitalWrite(PIN,HIGH);
   delay(DELAY_MS);
   digitalWrite(PIN,LOW);
