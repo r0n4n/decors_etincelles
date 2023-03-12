@@ -30,6 +30,12 @@ unsigned long package_rcv_delta_t = 0 ; // delta t entre deux réceptions de pac
 bool refresh = false ;
 bool first_iter = true ; 
 bool bPacketRcv = false;
+
+typedef struct {
+  uint8_t           packetId; //store this nodeId
+  uint8_t packet[PACKET_SIZE];
+} Payload;
+Payload theData;
 /**********************************************/
 
 /************** OBJECTS ***********************/

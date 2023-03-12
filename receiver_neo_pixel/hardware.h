@@ -3,6 +3,7 @@
 
 /************** *************   INCLUDES LIBRARY ********************************************/
 #include <RFM69.h> //get it here: https://www.github.com/lowpowerlab/rfm69
+#include <SPI.h>
 #include <Adafruit_NeoPixel.h>
 
 #ifdef __AVR__

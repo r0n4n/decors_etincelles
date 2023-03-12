@@ -29,9 +29,14 @@
 #include "wirelessDMX.h"
 /*********************************************************************************************/
 
-int mode = 1 ; // 1=receiver ; 2= transmitter
+int mode = 1 ; // 1=receiver ; 2= transmitter; 3 =receiverStruct
 //#define DEBUG
 //  #define DEBUG_CONFIG
+unsigned long previousMillis = 0;  // will store last time LED was updated
+// Variables will change:
+int ledState = LOW;  // ledState used to set the LED
+byte ackCount=0;
+
 
 #define SERIAL_BAUD 115200
 
@@ -54,11 +59,14 @@ void loop() {
   switch (mode){
     case 1: 
       checkCom();
-      traitement();
+      //traitement();
       break;
       //printReception();
     case 2:
       sendRFMPacket();
+      break;
+    case 3:
+      receiveStruct();
       break;
    }
 
@@ -93,15 +101,15 @@ void printReception() {
 }
 
 void traitement() {  
-  
+  digitalWrite(6, 1);
   //check if something was received (could be an interrupt from the radio)
   if (bPacketRcv)
   {
     if (packet_id == PACKET_NBR ) {
-      digitalWrite(LED2, HIGH) ;
+      //digitalWrite(LED2, HIGH) ;
     }
     else {
-      digitalWrite(LED2, LOW) ;
+      //digitalWrite(LED2, LOW) ;
     }
   }
 
@@ -109,7 +117,7 @@ void traitement() {
 
     //Serial.print("packet ") ; Serial.print(packet_id) ; Serial.println(" received") ;
     // start_pixel = (packet_id - 1) * PIXELS_PER_PACKET ;
-
+    
 
     if ((state == stop_packet) ) { // si le paquet reçu est le dernier paquet exigé
       digitalWrite(LED1, LOW) ;
@@ -137,8 +145,8 @@ void traitement() {
     }
   }
   if (packet_id == 6 ) {
-
-    pixels.show(); // on met à jour les pîxels de la bande
+    
+    //pixels.show(); // on met à jour les pîxels de la bande
     state = start_packet ; // on retourne à l'état initial : attendre le premier paquet
 
   }
@@ -150,18 +158,53 @@ void traitement() {
 
 void checkCom(void){
   //check if something was received
+//  Serial.println("hello");
+  //digitalWrite(7,HIGH);
+  //delay(100);
   bPacketRcv = radio.receiveDone();
+  //Serial.print("mode: "); Serial.println(radio._mode);
+  //bPacketRcv = true;
+  //digitalWrite(7,LOW);
+  //delay(100);
+  //BlinkNoDelay(7, 1000);
+  //Serial.flush();
+  _noDataSince() ; // display the com status with the LED
+  
   if (bPacketRcv)
   { 
-    packet_id = radio.DATA[0] ; // the first byte give the packet ID sent
+    //packet_id = radio.DATA[0] ; // the first byte give the packet ID sent
+    Serial.print("Période réception paquet :") ; Serial.print(package_rcv_delta_t) ; Serial.println(" ms") ;
     last_reception = millis() ;
-    radio.receiveDone(); //put back the radio in RX mode
-  }
-  _noDataSince() ; // display the com status with the LED
 
+
+    Serial.print('[');Serial.print(radio.SENDERID, DEC);Serial.print("] ");
+    Serial.print(" [RX_RSSI:");Serial.print(radio.readRSSI());Serial.print("]");
+  
+
+    if (radio.DATALEN != sizeof(Payload))
+      Serial.print("Invalid payload received, not matching Payload struct!");
+    else
+    {
+      theData = *(Payload*)radio.DATA; //assume radio.DATA actually contains our struct and not something else
+      Serial.print(" packetId=");
+      Serial.print(theData.packetId);
+      Serial.print(" first adress=");
+      Serial.print(theData.packet[0]);
+
+    }
+    Serial.println();
+    radio.receiveDone(); //put back the radio in RX mode
+
+    //digitalWrite(RECEPTION,HIGH);
+    //delay(100);
+    
+  } 
+
+  
+   
     
   #ifdef DEBUG
-  //Serial.print("Période réception paquet :") ; Serial.print(package_rcv_delta_t) ; Serial.println(" ms") ; 
+  
 //    Serial.print("Etat trame : ") ; 
 //    if (paquet_perdu)
 //      Serial.println("NOK") ;
@@ -174,6 +217,45 @@ void checkCom(void){
 void sendRFMPacket(void){
   uint8_t radiopacket[61] ;
   radio.send(TRANSMITTERID, (const void*)radiopacket, strlen(radiopacket), false) ; // envoi du paquet de données
+}
+
+void receiveStruct(void){
+  typedef struct {
+    int           nodeId; //store this nodeId
+    unsigned long uptime; //uptime in ms
+    float         temp;   //temperature maybe?
+  } Payload;
+  Payload theData;
+  
+  if (radio.receiveDone())
+  {
+    //Blink(LED1,500);
+    Serial.print('[');Serial.print(radio.SENDERID, DEC);Serial.print("] ");
+    Serial.print(" [RX_RSSI:");Serial.print(radio.readRSSI());Serial.print("]");
+  
+
+    if (radio.DATALEN != sizeof(Payload))
+      Serial.print("Invalid payload received, not matching Payload struct!");
+    else
+    {
+      theData = *(Payload*)radio.DATA; //assume radio.DATA actually contains our struct and not something else
+      Serial.print(" nodeId=");
+      Serial.print(theData.nodeId);
+      Serial.print(" uptime=");
+      Serial.print(theData.uptime);
+      Serial.print(" temp=");
+      Serial.print(theData.temp);
+    }
+    
+   
+    
+    Serial.println();
+  }
+  else {
+    //Serial.println("Nothing");
+  }
+  
+  //Blink(LED2,500);
 }
 
 // _________________________________________________________________________
@@ -271,7 +353,7 @@ void initialisation(void) {
   IOinit();
   digitalWrite(LED1, HIGH) ; // set led high to show that the setup has started
   wireless_init();
-  stripLed_init();
+  //stripLed_init();
   // init serial port for debugging
   //#ifdef DEBUG || DEBUG_CONFIG
   Serial.begin(SERIAL_BAUD);
@@ -341,5 +423,25 @@ void Blink(byte PIN, int DELAY_MS)
   delay(DELAY_MS);
   digitalWrite(PIN,LOW);
   delay(DELAY_MS);
+}
+
+void BlinkNoDelay(byte ledPin, int DELAY_MS)
+{
+  unsigned long currentMillis = millis();
+
+  if (currentMillis - previousMillis >= DELAY_MS) {
+    // save the last time you blinked the LED
+    previousMillis = currentMillis;
+    //Serial.print("hello");
+    // if the LED is off turn it on and vice-versa:
+    if (ledState == LOW) {
+      ledState = HIGH;
+    } else {
+      ledState = LOW;
+    }
+
+    // set the LED with the ledState of the variable:
+    digitalWrite(ledPin, ledState);
+  }
 }
 
