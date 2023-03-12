@@ -59,7 +59,7 @@ void loop() {
   switch (mode){
     case 1: 
       checkCom();
-      //traitement();
+      traitement();
       break;
       //printReception();
     case 2:
@@ -67,6 +67,9 @@ void loop() {
       break;
     case 3:
       receiveStruct();
+      break;
+    case 4:
+      stripLEDManual();
       break;
    }
 
@@ -158,53 +161,38 @@ void traitement() {
 
 void checkCom(void){
   //check if something was received
-//  Serial.println("hello");
-  //digitalWrite(7,HIGH);
-  //delay(100);
   bPacketRcv = radio.receiveDone();
-  //Serial.print("mode: "); Serial.println(radio._mode);
-  //bPacketRcv = true;
-  //digitalWrite(7,LOW);
-  //delay(100);
-  //BlinkNoDelay(7, 1000);
-  //Serial.flush();
   _noDataSince() ; // display the com status with the LED
   
   if (bPacketRcv)
   { 
     //packet_id = radio.DATA[0] ; // the first byte give the packet ID sent
-    Serial.print("Période réception paquet :") ; Serial.print(package_rcv_delta_t) ; Serial.println(" ms") ;
+    //Serial.print("Période réception paquet :") ; Serial.print(package_rcv_delta_t) ; Serial.println(" ms") ;
     last_reception = millis() ;
-
-
-    Serial.print('[');Serial.print(radio.SENDERID, DEC);Serial.print("] ");
-    Serial.print(" [RX_RSSI:");Serial.print(radio.readRSSI());Serial.print("]");
+    //Serial.print('[');Serial.print(radio.SENDERID, DEC);Serial.print("] ");
+    //Serial.print(" [RX_RSSI:");Serial.print(radio.readRSSI());Serial.print("]");
   
-
     if (radio.DATALEN != sizeof(Payload))
       Serial.print("Invalid payload received, not matching Payload struct!");
     else
     {
       theData = *(Payload*)radio.DATA; //assume radio.DATA actually contains our struct and not something else
-      Serial.print(" packetId=");
-      Serial.print(theData.packetId);
-      Serial.print(" first adress=");
-      Serial.print(theData.packet[0]);
-
+      packet_id = theData.packetId;
+      //Serial.print(" packetId=");
+      //Serial.print(packet_id);
+      //Serial.print(" first adress=");
+      //Serial.print(theData.packet[0]);
     }
-    Serial.println();
+    //Serial.println();
+    //printDMX();
     radio.receiveDone(); //put back the radio in RX mode
-
-    //digitalWrite(RECEPTION,HIGH);
-    //delay(100);
-    
   } 
 
   
-   
-    
+
+
+
   #ifdef DEBUG
-  
 //    Serial.print("Etat trame : ") ; 
 //    if (paquet_perdu)
 //      Serial.println("NOK") ;
@@ -212,6 +200,15 @@ void checkCom(void){
 //      Serial.println("OK") ;   
 //    Serial.print("Nbr de paquets perdu :") ; Serial.println(nbr_paquet_perdu) ;
   #endif
+}
+
+void printDMX(){
+  if (packet_id == 1){
+    for (int i = 0;i<10;i++){
+      Serial.print(theData.packet[i]); Serial.print(" ");
+    }
+    Serial.println();
+  }
 }
 
 void sendRFMPacket(void){
@@ -353,7 +350,7 @@ void initialisation(void) {
   IOinit();
   digitalWrite(LED1, HIGH) ; // set led high to show that the setup has started
   wireless_init();
-  //stripLed_init();
+  stripLed_init();
   // init serial port for debugging
   //#ifdef DEBUG || DEBUG_CONFIG
   Serial.begin(SERIAL_BAUD);
@@ -443,5 +440,44 @@ void BlinkNoDelay(byte ledPin, int DELAY_MS)
     // set the LED with the ledState of the variable:
     digitalWrite(ledPin, ledState);
   }
+}
+
+void stripLEDManual(void){
+  if (Serial.available() > 0)
+  {
+    String input = Serial.readString();
+    input.trim();
+    if (input == "off")
+      black_strip();
+    else if (input == "rouge")
+      fullRed();
+    else if (input == "vert")
+      fullGreen();
+    else if (input == "blue")
+      fullBlue();
+    
+      
+  }
+}
+
+void fullRed() {  
+    for(uint16_t i=0; i<pixels.numPixels(); i++) {
+        pixels.setPixelColor(i, pixels.Color(255,0,0 ) );
+    }
+    pixels.show();
+}
+
+void fullGreen() {  
+    for(uint16_t i=0; i<pixels.numPixels(); i++) {
+        pixels.setPixelColor(i, pixels.Color(0,0,255 ) );
+    }
+    pixels.show();
+}
+
+void fullBlue() {  
+    for(uint16_t i=0; i<pixels.numPixels(); i++) {
+        pixels.setPixelColor(i, pixels.Color(0,255,0 ) );
+    }
+    pixels.show();
 }
 

@@ -62,6 +62,12 @@ unsigned long iterations = 0;
 unsigned long decimation = 100000;
 long lastPeriod = -1;
 
+typedef struct {
+  uint8_t           packetId; //store this nodeId
+  uint8_t packet[PACKET_SIZE];
+} Payload;
+Payload theData;
+
 
 RFM69 radio = RFM69(RFM69_CS, RFM69_IRQ, IS_RFM69HCW, RFM69_IRQN);
 
@@ -191,12 +197,6 @@ void debug_channels_change(void) {
 
 #ifndef DMX
 void sendFromMonitor(void){
-    typedef struct {
-      uint8_t           packetId; //store this nodeId
-      uint8_t packet[PACKET_SIZE];
-    } Payload;
-    Payload theData;
-
     //fill in the struct with new values
     theData.packetId = 3;
     theData.packet[0] = 255;
