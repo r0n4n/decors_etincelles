@@ -134,16 +134,20 @@ void sendManualTram(){
       fulloff();
       Serial.println(input);
     }
+    else if (input == "on"){
+      fullOn();
+      Serial.println(input);
+    }
     else if (input == "rouge"){
-      //fullRed();
+      fullRed();
       Serial.println(input);
     }
     else if (input == "vert"){
-      //fullGreen();
       Serial.println(input);
+      fullGreen();
     }
     else if (input == "bleu"){
-      //fullBlue();   
+      fullBlue();   
       Serial.println(input);
     }
     else
@@ -160,36 +164,32 @@ void fulloff(){
 }
 
 void fullOn(){
-  for (int i = 0; i<DMXSERIAL_MAX;i++){
+  for (int i = 1; i<DMXSERIAL_MAX-1;i++){
     manData[i] = 255;
   }
 }
 
-void fullRed(){
-  manData[0] = 255;
-    manData[1] = 0;
-    manData[2] = 0;
-  
-  /*for (int i = 0; i<12;i+3){
+void fullRed(){ 
+  for (int i = 1; i<DMXSERIAL_MAX-1;i=i+3){
     manData[i] = 255;
     manData[i+1] = 0;
     manData[i+2] = 0;
-  }*/
+  }
 }
 
 void fullGreen(){
-  for (int i = 0; i<DMXSERIAL_MAX;i+3){
+  for (int i = 1; i<DMXSERIAL_MAX-1;i=i+3){
     manData[i] = 0;
-    manData[i+1] = 255;
-    manData[i+2] = 0;
+    manData[i+1] = 0;
+    manData[i+2] = 255;
   }
 }
 
 void fullBlue(){
-  for (int i = 0; i<DMXSERIAL_MAX;i+3){
+  for (int i = 1; i<DMXSERIAL_MAX-1;i=i+3){
     manData[i] = 0;
-    manData[i+1] = 0;
-    manData[i+2] = 255;
+    manData[i+1] = 255;
+    manData[i+2] = 0;
   }
 }
 
