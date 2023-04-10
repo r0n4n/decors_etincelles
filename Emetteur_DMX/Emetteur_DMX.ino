@@ -1,6 +1,6 @@
 // Programme permettant la lecture de la tram DMX et envoit des donnÃƒÂ©es par liaison RF a tous les dÃƒÂ©cors
 
-#define DMX
+//#define DMX
 
 #ifdef DMX
 #include <DMXSerial.h>                   // Appel de la librairie SerialDMX
@@ -125,35 +125,48 @@ void loop () { // Boucle du programme principal
 
 #ifndef DMX
 void sendManualTram(){
-
+  static int bRVBSequence = false; 
   if (Serial.available() > 0)
   {
     String input = Serial.readString();
     input.trim();
-    if (input == "off"){
-      fulloff();
+
+    if (input == "RVB"){   
       Serial.println(input);
+      bRVBSequence = true;
+    } 
+    else {
+      bRVBSequence = false;
+      if (input == "off"){
+        fulloff();
+        Serial.println(input);
+      }
+      else if (input == "on"){
+        fullOn();
+        Serial.println(input);
+      }
+      else if (input == "rouge"){
+        fullRed();
+        Serial.println(input);
+      }
+      else if (input == "vert"){
+        Serial.println(input);
+        fullGreen();
+      }
+      else if (input == "bleu"){
+        fullBlue();   
+        Serial.println(input);
+      }
+     
+      else
+        Serial.println("erreur commande");
+        sendPackets(manData);
     }
-    else if (input == "on"){
-      fullOn();
-      Serial.println(input);
-    }
-    else if (input == "rouge"){
-      fullRed();
-      Serial.println(input);
-    }
-    else if (input == "vert"){
-      Serial.println(input);
-      fullGreen();
-    }
-    else if (input == "bleu"){
-      fullBlue();   
-      Serial.println(input);
-    }
-    else
-      Serial.println("erreur commande");
   }
-  sendPackets(manData);
+
+  if (bRVBSequence) 
+    RVBSequence();
+    
 }
 #endif
 
@@ -191,6 +204,24 @@ void fullBlue(){
     manData[i+1] = 255;
     manData[i+2] = 0;
   }
+}
+
+void RVBSequence(){
+  fullRed();
+  sendPackets(manData);
+  delay(1000);
+  fullGreen();
+  sendPackets(manData);
+  delay(1000);
+  fullBlue();
+  sendPackets(manData);
+  delay(1000);
+  fullOn();
+  sendPackets(manData);
+  delay(1000);
+  fulloff();
+  sendPackets(manData);
+  delay(1000);
 }
 
 void sendPackets(uint8_t  *trame){
