@@ -105,7 +105,7 @@ void printReception() {
 
 void traitement() {  
   digitalWrite(6, 1);
-  //check if something was received (could be an interrupt from the radio)
+  //check if something was received 
   if (bPacketRcv)
   {
     if (packet_id == PACKET_NBR ) {
@@ -174,7 +174,7 @@ void checkCom(void){
   
     if (radio.DATALEN != sizeof(Payload))
       Serial.print("Invalid payload received, not matching Payload struct!");
-    else
+    else if (radio.TARGETID == 2)
     {
       theData = *(Payload*)radio.DATA; //assume radio.DATA actually contains our struct and not something else
       packet_id = theData.packetId;
@@ -332,6 +332,7 @@ void wireless_init(void){
   }
   radio.setPowerLevel(31); // power output ranges from 0 (5dBm) to 31 (20dBm)
   radio.encrypt(ENCRYPTKEY); // set the ENCRYPTKEY
+  radio.promiscuous(true);
   //*****************************************************************
 }
 
