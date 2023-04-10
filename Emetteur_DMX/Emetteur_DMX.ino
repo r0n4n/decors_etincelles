@@ -12,6 +12,7 @@ int mode = 4 ; // 1==DMX transmitter ; 2 == Receiver ; 3 == direct transmitter ;
 #include <RFM69.h> //get it here: https://www.github.com/lowpowerlab/rfm69
 
 #include "parameters.h"
+#include "DmxEffects.h"
 
 #define DEBUG
 
@@ -138,23 +139,23 @@ void sendManualTram(){
     else {
       bRVBSequence = false;
       if (input == "off"){
-        fulloff();
+        fulloff(manData);
         Serial.println(input);
       }
       else if (input == "on"){
-        fullOn();
+        fullOn(manData);
         Serial.println(input);
       }
       else if (input == "rouge"){
-        fullRed();
+        fullRed(manData);
         Serial.println(input);
       }
       else if (input == "vert"){
         Serial.println(input);
-        fullGreen();
+        fullGreen(manData);
       }
       else if (input == "bleu"){
-        fullBlue();   
+        fullBlue(manData);   
         Serial.println(input);
       }
      
@@ -164,65 +165,15 @@ void sendManualTram(){
     }
   }
 
-  if (bRVBSequence) 
-    RVBSequence();
+  if (bRVBSequence) {
+    RVBSequence(manData, 1000);
+    sendPackets(manData);
+  }
     
 }
 #endif
 
-void fulloff(){
-  for (int i = 0; i<DMXSERIAL_MAX;i++){
-    manData[i] = 0;
-  }
-}
 
-void fullOn(){
-  for (int i = 1; i<DMXSERIAL_MAX-1;i++){
-    manData[i] = 255;
-  }
-}
-
-void fullRed(){ 
-  for (int i = 1; i<DMXSERIAL_MAX-1;i=i+3){
-    manData[i] = 255;
-    manData[i+1] = 0;
-    manData[i+2] = 0;
-  }
-}
-
-void fullGreen(){
-  for (int i = 1; i<DMXSERIAL_MAX-1;i=i+3){
-    manData[i] = 0;
-    manData[i+1] = 0;
-    manData[i+2] = 255;
-  }
-}
-
-void fullBlue(){
-  for (int i = 1; i<DMXSERIAL_MAX-1;i=i+3){
-    manData[i] = 0;
-    manData[i+1] = 255;
-    manData[i+2] = 0;
-  }
-}
-
-void RVBSequence(){
-  fullRed();
-  sendPackets(manData);
-  delay(1000);
-  fullGreen();
-  sendPackets(manData);
-  delay(1000);
-  fullBlue();
-  sendPackets(manData);
-  delay(1000);
-  fullOn();
-  sendPackets(manData);
-  delay(1000);
-  fulloff();
-  sendPackets(manData);
-  delay(1000);
-}
 
 void sendPackets(uint8_t  *trame){
   uint8_t radiopacket[PACKET_SIZE_PLUS_ID] ;
