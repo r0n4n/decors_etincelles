@@ -38,6 +38,7 @@ int ledState = LOW;  // ledState used to set the LED
 byte ackCount=0;
 
 
+
 #define SERIAL_BAUD 115200
 
 //________________SETUP______________________
@@ -58,10 +59,11 @@ void setup() {
 void loop() { 
   switch (mode){
     case 1: 
-      checkCom();
+      listenRadio();
+      printReception();
       traitement();
+      
       break;
-      //printReception();
     case 2:
       sendRFMPacket();
       break;
@@ -75,32 +77,25 @@ void loop() {
 
 }
 
-void printReception() {
-  digitalWrite(RECEPTION, HIGH) ;
-  //Serial.flush();
-  //Serial.print('[');Serial.print(radio.SENDERID, DEC);Serial.print("] ");
-    
-  if (radio.receiveDone())
-  {
-    //Serial.flush();
-    
-    //Serial.print('[');Serial.print(radio.SENDERID, DEC);Serial.print("] ");
-    //Serial.print(" [RX_RSSI:");Serial.print(radio.readRSSI());Serial.print("]");
-    
-    delay(100);
-    digitalWrite(RECEPTION, LOW) ;
-    delay(100);
-   // Blink(RECEPTION,100);
-   packet_id = radio.DATA[0] ; // the first byte give the packet ID sent
-   
-   radio.receiveDone(); //put radio in RX mode // voir si nécessaire
-   //Serial.println("Hello");
-   }
-  else {
-    Serial.println("Waiting for data...");
-    Serial.println(radio._mode);
-  
+void printReception() { 
+static unsigned int  counter = 0;
+static unsigned int print_decimation = 100000;
+if (counter>=print_decimation){
+    //Serial.print("Broadcast RSSI: ");Serial.println(broadcast_RSSI);
+    Serial.print("Qualité comm :") ; Serial.print(trameCntOk) ; Serial.println("/10") ;
+    //Serial.print("Période :") ; Serial.println(package_rcv_delta_t) ;
+    //Serial.print("Débit :") ; Serial.println(debit) ;
+
+    Serial.print("Buff packet ID : ") ; 
+    for (int idx=0;idx<PACKET_NBR ;idx++){
+      Serial.print(packetIdBuff[idx]);
+    }
+    Serial.println("") ;
+
+    counter = 0;
   }
+  else 
+    counter++;
 }
 
 void traitement() {  
@@ -159,32 +154,21 @@ void traitement() {
 }
 
 
-void checkCom(void){
+void listenRadio(void){
   //check if something was received
   bPacketRcv = radio.receiveDone();
   _noDataSince() ; // display the com status with the LED
   
   if (bPacketRcv)
   { 
-    //packet_id = radio.DATA[0] ; // the first byte give the packet ID sent
-    //Serial.print("Période réception paquet :") ; Serial.print(package_rcv_delta_t) ; Serial.println(" ms") ;
     last_reception = millis() ;
-    //Serial.print('[');Serial.print(radio.SENDERID, DEC);Serial.print("] ");
-    //Serial.print(" [RX_RSSI:");Serial.print(radio.readRSSI());Serial.print("]");
-  
-    if (radio.DATALEN != sizeof(Payload))
-      Serial.print("Invalid payload received, not matching Payload struct!");
-    else if (radio.TARGETID == 2)
+    if (radio.DATALEN == sizeof(Payload) && radio.TARGETID == BROADCASTID)
     {
       theData = *(Payload*)radio.DATA; //assume radio.DATA actually contains our struct and not something else
       packet_id = theData.packetId;
-      //Serial.print(" packetId=");
-      //Serial.print(packet_id);
-      //Serial.print(" first adress=");
-      //Serial.print(theData.packet[0]);
+      broadcast_RSSI = radio.readRSSI();
+      checkCom();
     }
-    //Serial.println();
-    //printDMX();
     radio.receiveDone(); //put back the radio in RX mode
   } 
 
@@ -192,14 +176,7 @@ void checkCom(void){
 
 
 
-  #ifdef DEBUG
-//    Serial.print("Etat trame : ") ; 
-//    if (paquet_perdu)
-//      Serial.println("NOK") ;
-//    else
-//      Serial.println("OK") ;   
-//    Serial.print("Nbr de paquets perdu :") ; Serial.println(nbr_paquet_perdu) ;
-  #endif
+ 
 }
 
 void printDMX(){
@@ -217,12 +194,7 @@ void sendRFMPacket(void){
 }
 
 void receiveStruct(void){
-  typedef struct {
-    int           nodeId; //store this nodeId
-    unsigned long uptime; //uptime in ms
-    float         temp;   //temperature maybe?
-  } Payload;
-  Payload theData;
+
   
   if (radio.receiveDone())
   {
@@ -230,7 +202,7 @@ void receiveStruct(void){
     Serial.print('[');Serial.print(radio.SENDERID, DEC);Serial.print("] ");
     Serial.print(" [RX_RSSI:");Serial.print(radio.readRSSI());Serial.print("]");
   
-
+/*
     if (radio.DATALEN != sizeof(Payload))
       Serial.print("Invalid payload received, not matching Payload struct!");
     else
@@ -242,7 +214,7 @@ void receiveStruct(void){
       Serial.print(theData.uptime);
       Serial.print(" temp=");
       Serial.print(theData.temp);
-    }
+    }*/
     
    
     
@@ -393,9 +365,12 @@ void black_strip(void) {
 }
 
 bool _noDataSince() {
-  package_rcv_delta_t = millis() - last_reception;  
+  package_rcv_delta_t = millis() - last_reception; 
+  debit = 1000/float(package_rcv_delta_t); 
   if (package_rcv_delta_t > NO_DATA_SINCE) {
     digitalWrite(RECEPTION, LOW) ;
+    trameCntOk = 0;
+    broadcast_RSSI = 0;
     return false ;
   }
   else
@@ -403,16 +378,49 @@ bool _noDataSince() {
   return true ;
 }
 
-void check_paquet_perdu(){
+void checkCom(){
+  static int packetCounter = 0;
+  static int trameCnt = 0;
+  static int trameCntOkTmp = 0;
+  bool paquet_perdu = false; // True si un paquet n'a pas été reçu, false sinon
+  #define TRAMESNBRMAX 10
+  
+  if (trameCnt>=TRAMESNBRMAX){
+    trameCntOk = trameCntOkTmp;
+    trameCntOkTmp = 0;
+    trameCnt = 0;
+    
+  }
+
   if (first_iter == false){ 
-    if ((packet_id == 1 & last_packet_id == PACKET_NBR) || (packet_id ==(last_packet_id +1))){
+    if (packet_id <last_packet_id){ // une nouvelle trame arrive
       paquet_perdu = false;
+      trameCnt++;
+      packetCounter = 0;
     }
-    else 
-      paquet_perdu = true;   
-      nbr_paquet_perdu = nbr_paquet_perdu + 1;
+      
+    if (paquet_perdu ==false && packet_id>1 && packet_id<=PACKET_NBR && last_packet_id!=(packet_id-1)){ // si un paquet est perdu
+      paquet_perdu = true;
+    }
+
+    if (packet_id==PACKET_NBR && !paquet_perdu){ // si à la fin de la trame aucun paquet n'a été perdu 
+      trameCntOkTmp++;
+    }
+
   }
   last_packet_id = packet_id;
+
+  if (packetCounter<10){
+      packetIdBuff[packetCounter] = packet_id;
+      packetCounter++;
+  }
+  else 
+      packetCounter = 0;
+
+
+
+
+
 }
 
 void Blink(byte PIN, int DELAY_MS)

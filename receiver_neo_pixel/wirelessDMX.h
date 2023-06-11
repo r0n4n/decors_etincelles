@@ -15,11 +15,18 @@
 #define CHANNELS_NBR (NUMPIXELS*CHANNELS_PER_PIXEL/PIX_PER_GROUP) // on détermine le nombre de canaux nécessaires
 #define LAST_DMX_ADRESS (DECOR_DMX_ADRESS+CHANNELS_NBR-1)
 
+// ***************** Configuration réseau *********************
+#define NETWORKID 100 //the same on all nodes that talk to each other
+#define TRANSMITTERID 1 // L'adresse réseau de l'émetteur
+#define BROADCASTID 2 // L'adresse où le DMX est broadcasté 
+#define NODEID 3 // L'adresse réseau du récepteur 
+//***********************************************************************
+
 /*************** VARIABLES ********************/
 int state ; // L'id du paquet qui est attendu
 int packet_id ; // L'id du paquet qui vient d'être reçu
 int last_packet_id ; // ID du dernier paquet reçu 
-bool paquet_perdu = false; // True si un paquet n'a pas été reçu, false sinon
+int trameCntOk = 0;
 int nbr_paquet_perdu = 0; // compteur du nombre de paquets perdu 
 int start_index = 0  ; // premier indice dans le premier paquet que le récepteur doit interpréter
 int stop_index = 0 ; // dernier indice dans le dernier paquet que le récepteur doit interpréter
@@ -30,6 +37,10 @@ unsigned long package_rcv_delta_t = 0 ; // delta t entre deux réceptions de pac
 bool refresh = false ;
 bool first_iter = true ; 
 bool bPacketRcv = false;
+int broadcast_RSSI = 0;
+int packetIdBuff[PACKET_NBR];
+float debit = 0; 
+
 
 typedef struct {
   uint8_t           packetId; //store this nodeId

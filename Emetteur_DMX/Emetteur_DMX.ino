@@ -73,7 +73,7 @@ void loop () { // Boucle du programme principal
   switch (mode){
     case 1: 
     #ifdef DMX
-      //checkDMXCom(); 
+      checkDMXCom(); 
     #endif
       break;
     case 2:
