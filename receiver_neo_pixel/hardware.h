@@ -38,10 +38,6 @@
 
 
 
-// ***************** Configuration du module RFM69 *********************
-#define FREQUENCY RF69_433MHZ //Match frequency to the hardware version of the radio on your Feather
-#define IS_RFM69HCW true // set to 'true' if you are using an RFM69HCW module
-//**************************************************************************
 
 
 #endif

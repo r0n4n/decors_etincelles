@@ -1,6 +1,8 @@
 // Programme permettant la lecture de la tram DMX et envoit des donnÃƒÂ©es par liaison RF a tous les dÃƒÂ©cors
+#include "DmxEffects.h"
+#include "WirelessShow.h"
 
-#define DMX
+//#define DMX
 
 #ifdef DMX
 #include <DMXSerial.h>                   // Appel de la librairie SerialDMX
@@ -9,43 +11,22 @@ int mode = 1 ; // 1==DMX transmitter ; 2 == Receiver
 int mode = 4 ; // 1==DMX transmitter ; 2 == Receiver ; 3 == direct transmitter ; 4 : Manual DMX Transmitter
 #endif
 
-//#include <RFM69.h> //get it here: https://www.github.com/lowpowerlab/rfm69
-
-
-#include "DmxEffects.h"
-#include "WirelessShow.h"
-
-#define NO_DATA_SINCE 3000
 #define SERIAL_BAUD 115200
 
 #define DEBUG
 
-
-//*********************   DEFINE OUT/IN PINS **************************
+//*********************   DEFINE OUT/IN PINS **************************/
 #define LED 8 // onboard blinky
 #define LEDMX  7
 #define DEBUGPIN 3
-
 /**********************************************************************/
 
+//*********************   DMX Variables *************************************
 #define DMXSERIAL_MAX 512 // max. number of supported DMX data channels
 uint8_t  *dmxData;
 uint8_t  manData[DMXSERIAL_MAX];
-  
-
-
-
-
 uint8_t last_dmx_channels[513] ;
-//int packet_id_list[PACKET_AVAILABLE] = {1, 61, 121, 181, 241, 301, 361, 421, 481} ; // liste des premiers canaux de chaque paquet
-int indice_packet = 1 ;
-unsigned long last_reception = 0 ;
-unsigned long package_rcv_delta_t = 0 ; // delta t entre deux rÃƒÂ©ceptions de packet 
-unsigned long iterations = 0; 
-unsigned long decimation = 100000;
-long lastPeriod = -1;
-
-
+/**********************************************************************/
 
 
 void setup () { // Configuration au dÃƒÂ©marrage
@@ -68,8 +49,7 @@ void setup () { // Configuration au dÃƒÂ©marrage
 
 
 void loop () { // Boucle du programme principal
-  //_DMX_RFM69_send() ;
-  //debug_channels_change() ;
+
   switch (mode){
     case 1: 
     #ifdef DMX
@@ -92,7 +72,6 @@ void loop () { // Boucle du programme principal
     #endif
       break;
   }
-  //radio.send(NODERECEIVE, (const void*)radiopacket, strlen(radiopacket), false) ; // envoi du paquet de donnÃƒÂ©es
 }
 
 #ifndef DMX
@@ -145,11 +124,6 @@ void sendManualTram(){
 #endif
 
 
-
-
-
-
-/********* Envoi les paquets l'un aprÃƒÂ¨s l'autre *******/
 #ifdef DMX
 
 void _DMX_RFM69_send(void) {
@@ -205,26 +179,6 @@ void debug_channels_change(void) {
 /************************************************************************/
 #endif
 
-#ifndef DMX
-/*void sendFromMonitor(void){
-    //fill in the struct with new values
-    theData.packetId = 3;
-    theData.packet[0] = 255;
-    
-    Serial.print("Sending struct (");
-    Serial.print(sizeof(theData));
-    Serial.print(" bytes) ... ");*/
-    /*if (radio.sendWithRetry(NODERECEIVE, (const void*)(&theData), sizeof(theData)))
-      Serial.print(" ok!");
-    else Serial.print(" nothing...");*/
-    /*
-    radio.send(NODERECEIVE, (const void*)(&theData), sizeof(theData));
-    Serial.println();
-
- 
-}*/
-#endif
-
 
 void IOinit(void){
   pinMode(LED, OUTPUT);
@@ -233,41 +187,6 @@ void IOinit(void){
 }
 
 
-
-
-#ifndef DMX
-/*
-void checkRFMReception(){
-  if (radio.receiveDone())
-  {     
-    last_reception = millis() ;
-    radio.receiveDone(); //put back the radio in RX mode
-  }
-  _noDataSince();
-  
-  if (iterations>=decimation){
-    iterations=0;
-    //Serial.println("Hello");
-    //Serial.print('SENDERID: ');Serial.println(radio.SENDERID, DEC);
-    //Serial.print(" [RX_RSSI:");Serial.print(radio.readRSSI());Serial.println("]");
-    //Serial.print("PÃƒÂ©riode rÃƒÂ©ception paquet :") ; Serial.print(package_rcv_delta_t) ; Serial.println(" ms") ;
-  }
-  else {
-    //Serial.println(iterations);
-    iterations= iterations + 1;
-  }  
-}*/
-#endif
-
-void _noDataSince() {
-  package_rcv_delta_t = millis() - last_reception;  
-  if (package_rcv_delta_t > NO_DATA_SINCE) {
-    digitalWrite(LEDMX, LOW) ;
-  }
-  else
-    digitalWrite(LEDMX, HIGH) ;
-}
-
 void Blink(byte PIN, int DELAY_MS)
 {
   digitalWrite(PIN,HIGH);
@@ -275,8 +194,4 @@ void Blink(byte PIN, int DELAY_MS)
   digitalWrite(PIN,LOW);
   delay(DELAY_MS);
 }
-
-
-
-
 
