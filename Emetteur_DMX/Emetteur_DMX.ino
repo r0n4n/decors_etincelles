@@ -137,7 +137,7 @@ void sendManualTram(){
   }
 
   if (bRVBSequence) {
-    RVBSequence(manData, 1000);
+    RVBSequence(manData, 500);
     sendPackets(manData);
   }
     

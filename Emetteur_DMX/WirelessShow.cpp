@@ -68,6 +68,7 @@ void sendPackets(uint8_t  *trame){
         Serial.println("Sending failed (no ack)");
       }
       #endif
+      delay(2);
     }
 }
 
