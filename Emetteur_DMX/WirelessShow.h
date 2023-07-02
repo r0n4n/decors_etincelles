@@ -2,7 +2,17 @@
 #define WirelessShow
 
 #include "Arduino.h"
-#include <RFM69.h> //get it here: https://www.github.com/lowpowerlab/rfm69
+
+//#define RadioHead
+
+#ifndef RadioHead
+  #include <RFM69.h> //get it here: https://www.github.com/lowpowerlab/rfm69
+#else 
+  #include <SPI.h>
+  #include <RH_RF69.h>
+  #include <RHReliableDatagram.h>
+#endif
+
 #include "parameters.h"
 
 //*********************************************************************************************
@@ -17,7 +27,11 @@
 //*******************************************************
 
 //Match frequency to the hardware version of the radio on your Feather
-#define FREQUENCY RF69_433MHZ
+#ifndef RadioHead
+  #define FREQUENCY RF69_433MHZ
+#else 
+  #define RF69_FREQ 434.0
+#endif
 #define IS_RFM69HCW true // set to 'true' if you are using an RFM69HCW module
 
 #define RFM69_CS 10 // Chip select

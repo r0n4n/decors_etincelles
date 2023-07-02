@@ -1,6 +1,6 @@
 // Programme permettant la lecture de la tram DMX et envoit des donnÃƒÂ©es par liaison RF a tous les dÃƒÂ©cors
 
-#define DMX
+//#define DMX
 
 #ifdef DMX
 #include <DMXSerial.h>                   // Appel de la librairie SerialDMX
@@ -49,6 +49,9 @@ long lastPeriod = -1;
 
 
 void setup () { // Configuration au dÃƒÂ©marrage
+  #ifndef DMX
+      Serial.begin(SERIAL_BAUD);
+    #endif
   IOinit();
   wireless_init();
   
@@ -59,9 +62,6 @@ void setup () { // Configuration au dÃƒÂ©marrage
     #endif
       break;
     default:
-    #ifndef DMX
-      Serial.begin(SERIAL_BAUD);
-    #endif
       break;
   }
 }

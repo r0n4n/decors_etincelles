@@ -18,7 +18,7 @@
 #define RF69_FREQ 434.0
 
 // who am i? (server address)
-#define MY_ADDRESS     1
+#define MY_ADDRESS     2
 
 // Feather M0 w/Radio
 #define RFM69_CS      8
