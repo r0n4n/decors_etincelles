@@ -1,142 +1,181 @@
-#include "wirelessDMX.h"
+// rf69 demo tx rx.pde
+// -*- mode: C++ -*-
+// Example sketch showing how to create a simple addressed, reliable messaging client
+// with the RH_RF69 class. RH_RF69 class does not provide for addressing or
+// reliability, so you should only use RH_RF69  if you do not need the higher
+// level messaging abilities.
+// It is designed to work with the other example rf69_server.
+// Demonstrates the use of AES encryption, setting the frequency and modem 
+// configuration
 
-#define RECEPTION 13
-#define SERIAL_BAUD 115200
+#include <SPI.h>
+#include <RH_RF69.h>
+#include <RHReliableDatagram.h>
+//#define ADAFRUIT_FEATHER_M0
+/************ Radio Setup ***************/
+
+// Change to 434.0 or other frequency, must match RX's freq!
+#define RF69_FREQ 434.0
+
+// who am i? (server address)
+#define MY_ADDRESS     1
+
+//#if defined (__AVR_ATmega32U4__) // Feather 32u4 w/Radio
+  #define RFM69_CS      8
+  #define RFM69_INT     3
+  #define RFM69_RST     4
+  #define LED           13
+//#endif
+
+/*
+#if defined(ADAFRUIT_FEATHER_M0) || defined(ADAFRUIT_FEATHER_M0_EXPRESS) || defined(ARDUINO_SAMD_FEATHER_M0)
+  // Feather M0 w/Radio
+  #define RFM69_CS      8
+  #define RFM69_INT     3
+  #define RFM69_RST     4
+  #define LED           13
+#endif
+
+#if defined (__AVR_ATmega328P__)  // Feather 328P w/wing
+  #define RFM69_INT     3  // 
+  #define RFM69_CS      4  //
+  #define RFM69_RST     2  // "A"
+  #define LED           13
+#endif
+
+#if defined(ESP8266)    // ESP8266 feather w/wing
+  #define RFM69_CS      2    // "E"
+  #define RFM69_IRQ     15   // "B"
+  #define RFM69_RST     16   // "D"
+  #define LED           0
+#endif
+
+#if defined(ARDUINO_ADAFRUIT_FEATHER_ESP32S2) || defined(ARDUINO_NRF52840_FEATHER) || defined(ARDUINO_NRF52840_FEATHER_SENSE)
+  #define RFM69_INT     9  // "A"
+  #define RFM69_CS      10  // "B"
+  #define RFM69_RST     11  // "C"
+  #define LED           13
+
+#elif defined(ESP32)    // ESP32 feather w/wing
+  #define RFM69_RST     13   // same as LED
+  #define RFM69_CS      33   // "B"
+  #define RFM69_INT     27   // "A"
+  #define LED           13
+#endif
+
+#if defined(ARDUINO_NRF52832_FEATHER)
+  // nRF52832 feather w/wing 
+  #define RFM69_RST     7   // "A"
+  #define RFM69_CS      11   // "B"
+  #define RFM69_INT     31   // "C"
+  #define LED           17
+#endif
+*/
+/* Teensy 3.x w/wing
+#define RFM69_RST     9   // "A"
+#define RFM69_CS      10   // "B"
+#define RFM69_IRQ     4    // "C"
+#define RFM69_IRQN    digitalPinToInterrupt(RFM69_IRQ )
+*/
  
+/* WICED Feather w/wing 
+#define RFM69_RST     PA4     // "A"
+#define RFM69_CS      PB4     // "B"
+#define RFM69_IRQ     PA15    // "C"
+#define RFM69_IRQN    RFM69_IRQ
+*/
 
-void setup() {
-  // put your setup code here, to run once:
-  wireless_init();
-  pinMode(RECEPTION, OUTPUT);
-  Serial.begin(SERIAL_BAUD);
+// Singleton instance of the radio driver
+RH_RF69 rf69(RFM69_CS, RFM69_INT);
+
+// Class to manage message delivery and receipt, using the driver declared above
+RHReliableDatagram rf69_manager(rf69, MY_ADDRESS);
+
+
+int16_t packetnum = 0;  // packet counter, we increment per xmission
+
+void setup() 
+{
+  Serial.begin(115200);
+  //while (!Serial) { delay(1); } // wait until serial console is open, remove if not tethered to computer
+
+  pinMode(LED, OUTPUT);   
+  delay(3000);
+  
+  pinMode(RFM69_RST, OUTPUT);
+  digitalWrite(RFM69_RST, LOW);
+
+  Serial.println("Feather Addressed RFM69 RX Test!");
+  Serial.println();
+
+  // manual reset
+  digitalWrite(RFM69_RST, HIGH);
+  delay(10);
+  digitalWrite(RFM69_RST, LOW);
+  delay(10);
+  
+  if (!rf69_manager.init()) {
+    Serial.println("RFM69 radio init failed");
+    while (1);
+  }
+  Serial.println("RFM69 radio init OK!");
+  // Defaults after init are 434.0MHz, modulation GFSK_Rb250Fd250, +13dbM (for low power module)
+  // No encryption
+  if (!rf69.setFrequency(RF69_FREQ)) {
+    Serial.println("setFrequency failed");
+  }
+
+  // If you are using a high power RF69 eg RFM69HW, you *must* set a Tx power with the
+  // ishighpowermodule flag set like this:
+  rf69.setTxPower(20, true);  // range from 14-20 for power, 2nd arg must be true for 69HCW
+
+  // The encryption key has to be the same as the one in the server
+  uint8_t key[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+                    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+
+  rf69.setEncryptionKey(key);
+  
+  pinMode(LED, OUTPUT);
+
+  Serial.print("RFM69 radio @");  Serial.print((int)RF69_FREQ);  Serial.println(" MHz");
 }
+
+
+// Dont put this on the stack:
+uint8_t data[] = "And hello back to you";
+// Dont put this on the stack:
+uint8_t buf[RH_RF69_MAX_MESSAGE_LEN];
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  listenRadio();
-  
-  printReception();
-}
 
-
-void wireless_init(void){
-  //************************ RFM69 INIT ******************************
-  // Hard Reset the RFM module
-  pinMode(RFM69_RST, OUTPUT);
-  digitalWrite(RFM69_RST, HIGH);
-  delay(100);
-  digitalWrite(RFM69_RST, LOW);
-  delay(100);
-
-  radio.initialize(FREQUENCY, NODEID, NETWORKID);
-  if (IS_RFM69HCW) {
-    radio.setHighPower(); // Only for RFM69HCW & HW!
-  }
-  radio.setPowerLevel(31); // power output ranges from 0 (5dBm) to 31 (20dBm)
-  radio.encrypt(ENCRYPTKEY); // set the ENCRYPTKEY
-  radio.promiscuous(true);
-  //*****************************************************************
-}
-
-void listenRadio(void){
-  //check if something was received
-  bPacketRcv = radio.receiveDone();
-  _noDataSince() ; // display the com status with the LED
-  
-  if (bPacketRcv)
-  { 
-    Blink(RECEPTION, 100);
-    last_reception = millis() ;
-    if (radio.DATALEN == sizeof(Payload) && radio.TARGETID == BROADCASTID)
-    {
-      theData = *(Payload*)radio.DATA; //assume radio.DATA actually contains our struct and not something else
-      packet_id = theData.packetId;
-      broadcast_RSSI = radio.readRSSI();
-      checkCom();
-    }
-    radio.receiveDone(); //put back the radio in RX mode
-  } 
-}
-
-bool _noDataSince() {
-  package_rcv_delta_t = millis() - last_reception; 
-  debit = 1000/float(package_rcv_delta_t); 
-  if (package_rcv_delta_t > NO_DATA_SINCE) {
-    digitalWrite(RECEPTION, LOW) ;
-    trameCntOk = 0;
-    broadcast_RSSI = 0;
-    return false ;
-  }
-  else
-    digitalWrite(RECEPTION, HIGH) ;
-  return true ;
-}
-
-void printReception() { 
-static unsigned int  counter = 0;
-static unsigned int print_decimation = 100000;
-if (counter>=print_decimation){
-    //Serial.print("Broadcast RSSI: ");Serial.println(broadcast_RSSI);
-    Serial.print("Qualité comm :") ; Serial.print(trameCntOk) ; Serial.println("/10") ;
-    //Serial.print("Période :") ; Serial.println(package_rcv_delta_t) ;
-    //Serial.print("Débit :") ; Serial.println(debit) ;
-
-    Serial.print("Buff packet ID : ") ; 
-    for (int idx=0;idx<PACKET_NBR ;idx++){
-      Serial.print(packetIdBuff[idx]);
-    }
-    Serial.println("") ;
-
-    counter = 0;
-  }
-  else 
-    counter++;
-}
-
-void Blink(byte PIN, int DELAY_MS)
-{
-  digitalWrite(PIN,HIGH);
-  delay(DELAY_MS);
-  digitalWrite(PIN,LOW);
-  delay(DELAY_MS);
-}
-
-void checkCom(){
-  static int packetCounter = 0;
-  static int trameCnt = 0;
-  static int trameCntOkTmp = 0;
-  bool paquet_perdu = false; // True si un paquet n'a pas été reçu, false sinon
-  #define TRAMESNBRMAX 10
-  
-  if (trameCnt>=TRAMESNBRMAX){
-    trameCntOk = trameCntOkTmp;
-    trameCntOkTmp = 0;
-    trameCnt = 0;
-    
-  }
-
-  if (first_iter == false){ 
-    if (packet_id <last_packet_id){ // une nouvelle trame arrive
-      paquet_perdu = false;
-      trameCnt++;
-      packetCounter = 0;
-    }
+  if (rf69_manager.available())
+  {
+    // Wait for a message addressed to us from the client
+    uint8_t len = sizeof(buf);
+    uint8_t from;
+    if (rf69_manager.recvfromAck(buf, &len, &from)) {
+      buf[len] = 0; // zero out remaining string
       
-    if (paquet_perdu ==false && packet_id>1 && packet_id<=PACKET_NBR && last_packet_id!=(packet_id-1)){ // si un paquet est perdu
-      paquet_perdu = true;
+      Serial.print("Got packet from #"); Serial.print(from);
+      Serial.print(" [RSSI :");
+      Serial.print(rf69.lastRssi());
+      Serial.print("] : ");
+      Serial.println((char*)buf);
+      Blink(LED, 40, 3); //blink LED 3 times, 40ms between blinks
+
+      // Send a reply back to the originator client
+      if (!rf69_manager.sendtoWait(data, sizeof(data), from))
+        Serial.println("Sending failed (no ack)");
     }
-
-    if (packet_id==PACKET_NBR && !paquet_perdu){ // si à la fin de la trame aucun paquet n'a été perdu 
-      trameCntOkTmp++;
-    }
-
   }
-  last_packet_id = packet_id;
+}
 
-  if (packetCounter<10){
-      packetIdBuff[packetCounter] = packet_id;
-      packetCounter++;
+
+void Blink(byte PIN, byte DELAY_MS, byte loops) {
+  for (byte i=0; i<loops; i++)  {
+    digitalWrite(PIN,HIGH);
+    delay(DELAY_MS);
+    digitalWrite(PIN,LOW);
+    delay(DELAY_MS);
   }
-  else 
-      packetCounter = 0;
 }
