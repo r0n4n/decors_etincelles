@@ -342,8 +342,9 @@ void initialisation(void) {
 
   IOinit();
   digitalWrite(LED1, HIGH) ; // set led high to show that the setup has started
-  wireless_init();
   stripLed_init();
+  wireless_init();
+  
   // init serial port for debugging
   //#ifdef DEBUG || DEBUG_CONFIG
   Serial.begin(SERIAL_BAUD);
