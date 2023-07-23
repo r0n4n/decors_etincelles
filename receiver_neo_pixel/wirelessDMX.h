@@ -20,6 +20,7 @@
 #define TRANSMITTERID 1 // L'adresse réseau de l'émetteur
 #define BROADCASTID 2 // L'adresse où le DMX est broadcasté 
 #define NODEID 3 // L'adresse réseau du récepteur 
+#define TESTEURID 4 // L'adresse réseau du testeur réseau 
 //***********************************************************************
 
 /*************** VARIABLES ********************/
@@ -47,6 +48,13 @@ typedef struct {
   uint8_t packet[PACKET_SIZE];
 } Payload;
 Payload theData;
+
+typedef struct {
+  int broadcast_RSSI;
+  int trameCntOk;
+} DiagStatus;
+
+DiagStatus diagStatus;
 /**********************************************/
 
 /************** OBJECTS ***********************/

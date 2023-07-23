@@ -81,16 +81,18 @@ void printReception() {
 static unsigned int  counter = 0;
 static unsigned int print_decimation = 100000;
 if (counter>=print_decimation){
-    //Serial.print("Broadcast RSSI: ");Serial.println(broadcast_RSSI);
+    Serial.print("Broadcast RSSI: ");Serial.println(broadcast_RSSI);
     Serial.print("Qualité comm :") ; Serial.print(trameCntOk) ; Serial.println("/10") ;
     //Serial.print("Période :") ; Serial.println(package_rcv_delta_t) ;
     //Serial.print("Débit :") ; Serial.println(debit) ;
 
-    Serial.print("Buff packet ID : ") ; 
+    /*Serial.print("Buff packet ID : ") ; 
     for (int idx=0;idx<PACKET_NBR ;idx++){
       Serial.print(packetIdBuff[idx]);
     }
-    Serial.println("") ;
+    Serial.println("") ;*/
+    
+
 
     counter = 0;
   }
@@ -162,7 +164,24 @@ void listenRadio(void){
   if (bPacketRcv)
   { 
     last_reception = millis() ;
-    if (radio.DATALEN == sizeof(Payload) && radio.TARGETID == BROADCASTID)
+    if (radio.DATALEN == sizeof(uint8_t) && radio.SENDERID == TESTEURID)
+    {
+      //Serial.println("Diag demandé");
+      if (radio.ACKRequested())
+      {
+        radio.sendACK();
+      }
+      //delay(500);
+      diagStatus.broadcast_RSSI = broadcast_RSSI; 
+      diagStatus.trameCntOk = trameCntOk;
+      if (radio.sendWithRetry(TESTEURID, (const void*)(&diagStatus), sizeof(DiagStatus),5,100)) {
+        Serial.println("status de diag envoyé !") ;
+      }
+      else {
+        Serial.println("Impossible d'envoyer le status de diag") ;
+      } 
+    }
+    else if (radio.DATALEN == sizeof(Payload) && radio.TARGETID == BROADCASTID)
     {
       theData = *(Payload*)radio.DATA; //assume radio.DATA actually contains our struct and not something else
       packet_id = theData.packetId;
@@ -171,7 +190,8 @@ void listenRadio(void){
     }
     radio.receiveDone(); //put back the radio in RX mode
   } 
-
+    
+    
   
 
 

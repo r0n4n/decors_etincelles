@@ -28,9 +28,14 @@
 #define ONEDIAG 2
 /***********************/
 
+/** CODE DIAG **/ 
+#define DIAGCODE 321
+
+
 /*************** VARIABLES ********************/
 int state ; // L'id du paquet qui est attendu
 int tst_state ;
+int prev_tst_state = -1 ; 
 int packet_id ; // L'id du paquet qui vient d'être reçu
 int last_packet_id ; // ID du dernier paquet reçu 
 int trameCntOk = 0;
@@ -54,6 +59,11 @@ typedef struct {
   uint8_t packet[PACKET_SIZE];
 } Payload;
 Payload theData;
+
+typedef struct {
+  int broadcast_RSSI;
+  int trameCntOk;
+} DiagStatus;
 /**********************************************/
 
 /************** OBJECTS ***********************/

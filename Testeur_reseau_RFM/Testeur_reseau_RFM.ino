@@ -58,6 +58,7 @@ void setup() {
 //______________ LOOP _______________________
 void loop() { 
   IHM();
+  //Serial.print("tst_state :"); Serial.println(tst_state);
   switch (tst_state){
     case STANDBY: // no state
       break;
@@ -66,7 +67,10 @@ void loop() {
       printReception();
       break;
     case ONEDIAG:
-      sendRFMPacket();
+      //Serial.println("Onediag");
+      if (nodeDiagnostic(3)==1) {
+        tst_state = STANDBY;
+      } 
       break;
     case 3:
       receiveStruct();
@@ -412,11 +416,6 @@ void checkCom(){
   }
   else 
       packetCounter = 0;
-
-
-
-
-
 }
 
 void Blink(byte PIN, int DELAY_MS)
@@ -466,26 +465,90 @@ void stripLEDManual(void){
 }
 
 void IHM(void){
+  
   if (Serial.available() > 0)
   {
     String input = Serial.readString();
     input.trim();
 
     if (input == "ecoute"){   
-      Serial.println("ecoute...");
       tst_state = LISTENER;
     } 
-    else if (input == "getstate"){
-      Serial.println("Diagnostic...");
+    else if (input == "getstate"){     
       tst_state = ONEDIAG;
     } 
     else {
-      Serial.println("STANDBY");
       tst_state = STANDBY;
     }
   }
+
+  if (prev_tst_state != tst_state) {
+    switch (tst_state){
+      case LISTENER:
+        Serial.println("Ecoute...");
+        break;
+      case STANDBY:
+        Serial.println("STANDBY");
+        break;
+      case ONEDIAG:
+       Serial.println("Diagnostic...");
+        break;
+      default: 
+        break;
+    }
+  }
+  prev_tst_state = tst_state;
   
 }
+
+#define SENDREQUEST 0
+#define WAITFDK 1
+
+
+int nodeDiagnostic(int nodeID){
+  uint8_t diagCode = DIAGCODE ;
+  static uint8_t diagSeqState = SENDREQUEST;  
+  //Serial.println(diagSeqState);
+  switch (diagSeqState) {
+    case SENDREQUEST:
+      Serial.println("Send request...");
+      if (radio.sendWithRetry(nodeID, (const void*)(diagCode), sizeof(uint8_t))){
+        //Serial.println("Comm with node ok!");
+        diagSeqState = WAITFDK;
+      }
+      else {
+        //Serial.println(" Pas de réponse...");
+      }
+      
+    case WAITFDK:
+      //Serial.println("En attend du retour du diagnostic ...");
+      if (radio.receiveDone())
+      {
+        //Serial.println("Message received");
+        if (radio.DATALEN == sizeof(DiagStatus) && radio.SENDERID == nodeID)
+        {
+          if (radio.ACKRequested())
+          {
+            radio.sendACK();
+            delay(10);
+          }
+          DiagStatus diagStatus;
+          diagStatus = *(DiagStatus*)radio.DATA; 
+          Serial.print("Comm status du node "); Serial.println(nodeID);
+          Serial.print("   Broadcast RSSI: ");Serial.println(diagStatus.broadcast_RSSI);
+          Serial.print("   Qualité comm :") ; Serial.print(diagStatus.trameCntOk) ; Serial.println("/10") ;
+          diagSeqState = SENDREQUEST;
+          return 1; 
+        }
+      }    
+      break;
+    default:
+      break;
+  }
+  return 0;
+}
+
+/****** Programme test strip LEDs  ***/
 
 void fullRed() {  
     for(uint16_t i=0; i<pixels.numPixels(); i++) {
