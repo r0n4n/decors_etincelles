@@ -22,6 +22,12 @@
 #define NODEID 3 // L'adresse réseau du récepteur 
 #define TESTEURID 4 // L'adresse réseau du testeur réseau 
 //***********************************************************************
+/** CODE DIAG **/ 
+#define DIAGCODE 321
+#define FULLRED 100
+#define FULLGREEN 200
+#define FULLBLUE 300
+
 
 /*************** VARIABLES ********************/
 int state ; // L'id du paquet qui est attendu
@@ -53,8 +59,13 @@ typedef struct {
   int broadcast_RSSI;
   int trameCntOk;
 } DiagStatus;
-
 DiagStatus diagStatus;
+
+typedef struct {
+  int diagCode;
+} DiagBuff;
+DiagBuff diagBuff;
+
 /**********************************************/
 
 /************** OBJECTS ***********************/

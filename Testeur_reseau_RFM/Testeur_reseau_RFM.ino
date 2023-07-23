@@ -506,13 +506,13 @@ void IHM(void){
 
 
 int nodeDiagnostic(int nodeID){
-  uint8_t diagCode = DIAGCODE ;
+  diagBuff.diagCode = DIAGCODE;
   static uint8_t diagSeqState = SENDREQUEST;  
   //Serial.println(diagSeqState);
   switch (diagSeqState) {
     case SENDREQUEST:
       Serial.println("Send request...");
-      if (radio.sendWithRetry(nodeID, (const void*)(diagCode), sizeof(uint8_t))){
+      if (radio.sendWithRetry(nodeID, (const void*)(&diagBuff), sizeof(diagBuff))){
         //Serial.println("Comm with node ok!");
         diagSeqState = WAITFDK;
       }

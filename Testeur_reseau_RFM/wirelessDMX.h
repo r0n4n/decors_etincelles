@@ -30,6 +30,9 @@
 
 /** CODE DIAG **/ 
 #define DIAGCODE 321
+#define FULLRED 100
+#define FULLGREEN 200
+#define FULLBLUE 300
 
 
 /*************** VARIABLES ********************/
@@ -64,6 +67,11 @@ typedef struct {
   int broadcast_RSSI;
   int trameCntOk;
 } DiagStatus;
+
+typedef struct {
+  int diagCode;
+} DiagBuff;
+DiagBuff diagBuff;
 /**********************************************/
 
 /************** OBJECTS ***********************/

@@ -30,6 +30,9 @@
 /*********************************************************************************************/
 
 int mode = 1 ; // 1=receiver ; 2= transmitter; 3 =receiverStruct
+#define AUTOMODE 1;
+#define MANUALREMOTEMODE 2;
+#define LOCALREMOTEMODE 3;
 //#define DEBUG
 //  #define DEBUG_CONFIG
 unsigned long previousMillis = 0;  // will store last time LED was updated
@@ -57,15 +60,14 @@ void setup() {
 
 //______________ LOOP _______________________
 void loop() { 
+  listenRadio();
+  printReception();
   switch (mode){
     case 1: 
-      listenRadio();
-      printReception();
       traitement();
-      
       break;
     case 2:
-      sendRFMPacket();
+      //sendRFMPacket();
       break;
     case 3:
       receiveStruct();
@@ -164,22 +166,28 @@ void listenRadio(void){
   if (bPacketRcv)
   { 
     last_reception = millis() ;
-    if (radio.DATALEN == sizeof(uint8_t) && radio.SENDERID == TESTEURID)
-    {
-      //Serial.println("Diag demandé");
-      if (radio.ACKRequested())
-      {
-        radio.sendACK();
+    if (radio.DATALEN == sizeof(diagBuff) && radio.SENDERID == TESTEURID)
+    {    
+      diagBuff = *(DiagBuff*)radio.DATA;
+      Serial.println(diagBuff.diagCode);
+      if (diagBuff.diagCode == DIAGCODE){ //
+        Serial.println("Diag demandé");
+        
+        if (radio.ACKRequested())
+        {
+          radio.sendACK();
+        }
+        //delay(500);
+        diagStatus.broadcast_RSSI = broadcast_RSSI; 
+        diagStatus.trameCntOk = trameCntOk;
+        if (radio.sendWithRetry(TESTEURID, (const void*)(&diagStatus), sizeof(DiagStatus),5,100)) {
+          Serial.println("status de diag envoyé !") ;
+        }
+        else {
+          Serial.println("Impossible d'envoyer le status de diag") ;
+        } 
       }
-      //delay(500);
-      diagStatus.broadcast_RSSI = broadcast_RSSI; 
-      diagStatus.trameCntOk = trameCntOk;
-      if (radio.sendWithRetry(TESTEURID, (const void*)(&diagStatus), sizeof(DiagStatus),5,100)) {
-        Serial.println("status de diag envoyé !") ;
-      }
-      else {
-        Serial.println("Impossible d'envoyer le status de diag") ;
-      } 
+      
     }
     else if (radio.DATALEN == sizeof(Payload) && radio.TARGETID == BROADCASTID)
     {
