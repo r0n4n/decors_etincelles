@@ -1,6 +1,6 @@
 // Programme permettant la lecture de la tram DMX et envoit des donnÃƒÂ©es par liaison RF a tous les dÃƒÂ©cors
 
-#define DMX
+//#define DMX
 
 #ifdef DMX
 #include <DMXSerial.h>                   // Appel de la librairie SerialDMX

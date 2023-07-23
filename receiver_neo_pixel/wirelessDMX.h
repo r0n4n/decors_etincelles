@@ -23,7 +23,10 @@
 #define TESTEURID 4 // L'adresse réseau du testeur réseau 
 //***********************************************************************
 /** CODE DIAG **/ 
+#define AUTO 0 
+#define REMOTEMANUAL 1  
 #define DIAGCODE 321
+#define FULLOFF 50
 #define FULLRED 100
 #define FULLGREEN 200
 #define FULLBLUE 300
@@ -62,7 +65,8 @@ typedef struct {
 DiagStatus diagStatus;
 
 typedef struct {
-  int diagCode;
+  uint8_t mode;
+  uint8_t diagCode;
 } DiagBuff;
 DiagBuff diagBuff;
 

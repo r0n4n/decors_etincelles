@@ -31,8 +31,8 @@
 
 int mode = 1 ; // 1=receiver ; 2= transmitter; 3 =receiverStruct
 #define AUTOMODE 1;
-#define MANUALREMOTEMODE 2;
-#define LOCALREMOTEMODE 3;
+#define REMOTEMANUALMODE 2;
+#define LOCALMANUALMODE 3;
 //#define DEBUG
 //  #define DEBUG_CONFIG
 unsigned long previousMillis = 0;  // will store last time LED was updated
@@ -61,13 +61,14 @@ void setup() {
 //______________ LOOP _______________________
 void loop() { 
   listenRadio();
-  printReception();
+  
   switch (mode){
     case 1: 
+      printReception();
       traitement();
       break;
     case 2:
-      //sendRFMPacket();
+      remoteManual();
       break;
     case 3:
       receiveStruct();
@@ -169,9 +170,9 @@ void listenRadio(void){
     if (radio.DATALEN == sizeof(diagBuff) && radio.SENDERID == TESTEURID)
     {    
       diagBuff = *(DiagBuff*)radio.DATA;
-      Serial.println(diagBuff.diagCode);
+      //Serial.println(diagBuff.diagCode);
       if (diagBuff.diagCode == DIAGCODE){ //
-        Serial.println("Diag demandé");
+        //Serial.println("Diag demandé");
         
         if (radio.ACKRequested())
         {
@@ -187,7 +188,22 @@ void listenRadio(void){
           Serial.println("Impossible d'envoyer le status de diag") ;
         } 
       }
-      
+      else if (diagBuff.mode == REMOTEMANUAL){
+        if (radio.ACKRequested())
+        {
+          radio.sendACK();
+        }
+        mode = REMOTEMANUALMODE ;
+        Serial.println("REMOTEMANUALMODE") ;
+      }
+      else if (diagBuff.mode == AUTO){
+        if (radio.ACKRequested())
+        {
+          radio.sendACK();
+        }
+        mode = AUTOMODE ;
+        Serial.println("Auto mode") ;
+      }
     }
     else if (radio.DATALEN == sizeof(Payload) && radio.TARGETID == BROADCASTID)
     {
@@ -445,11 +461,23 @@ void checkCom(){
   }
   else 
       packetCounter = 0;
+}
 
-
-
-
-
+void remoteManual(void){
+ if (bPacketRcv){
+   if (diagBuff.diagCode == FULLOFF){
+     black_strip();
+   }
+   else if (diagBuff.diagCode == FULLRED){
+     fullRed();
+   }
+   else if (diagBuff.diagCode == FULLGREEN){
+     fullGreen();
+   }
+   else if (diagBuff.diagCode == FULLBLUE){
+     fullBlue();
+   }
+ }
 }
 
 void Blink(byte PIN, int DELAY_MS)

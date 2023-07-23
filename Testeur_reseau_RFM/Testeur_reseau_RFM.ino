@@ -72,8 +72,9 @@ void loop() {
         tst_state = STANDBY;
       } 
       break;
-    case 3:
-      receiveStruct();
+    case MANUALMODE:
+      //remoteManual(3,"RED");
+      //tst_state = STANDBY;
       break;
     case 4:
       stripLEDManual();
@@ -477,6 +478,11 @@ void IHM(void){
     else if (input == "getstate"){     
       tst_state = ONEDIAG;
     } 
+    else if (input =="red" || input =="green"|| input =="blue" || input=="off" || input =="auto"){
+      tst_state = MANUALMODE;
+      Serial.print("Command sent: "); Serial.println(input);
+      remoteManual(3,  input);
+    }
     else {
       tst_state = STANDBY;
     }
@@ -493,6 +499,9 @@ void IHM(void){
       case ONEDIAG:
        Serial.println("Diagnostic...");
         break;
+      case MANUALMODE:
+       Serial.println("MANUALMODE...");
+        break;
       default: 
         break;
     }
@@ -503,8 +512,6 @@ void IHM(void){
 
 #define SENDREQUEST 0
 #define WAITFDK 1
-
-
 int nodeDiagnostic(int nodeID){
   diagBuff.diagCode = DIAGCODE;
   static uint8_t diagSeqState = SENDREQUEST;  
@@ -546,6 +553,35 @@ int nodeDiagnostic(int nodeID){
       break;
   }
   return 0;
+}
+
+void remoteManual(int nodeID, String command){
+  diagBuff.mode = REMOTEMANUAL;
+   
+  if (command == "auto") {
+    diagBuff.mode = AUTO;   
+  } 
+  else if (command == "off") {
+    diagBuff.diagCode = FULLOFF;    
+  }
+  else if (command == "red") {
+    diagBuff.diagCode = FULLRED;    
+  }
+  else if (command == "green") {
+    diagBuff.diagCode = FULLGREEN;    
+  }
+  else if (command == "blue") {
+    diagBuff.diagCode = FULLBLUE;    
+  }
+  
+
+  //Serial.println("Send request...");
+  if (radio.sendWithRetry(nodeID, (const void*)(&diagBuff), sizeof(diagBuff))){
+    //Serial.println("Comm with node ok!");
+  }
+  else {
+    //Serial.println(" Pas de réponse...");
+  }
 }
 
 /****** Programme test strip LEDs  ***/
