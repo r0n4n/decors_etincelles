@@ -491,21 +491,6 @@ void IHM(void){
     char response[MyCommandParser::MAX_RESPONSE_SIZE];
     parser.processCommand(line, response);
     Serial.println(response);
-
-    /*if (input == "ecoute"){   
-      tst_state = LISTENER;
-    } 
-    else if (input == "getstate"){     
-      tst_state = ONEDIAG;
-    } 
-    else if (input =="red" || input =="green"|| input =="blue" || input=="off" || input =="auto"){
-      tst_state = MANUALMODE;
-      Serial.print("Command sent: "); Serial.println(input);
-      remoteManual(3,  input);
-    }
-    else {
-      tst_state = STANDBY;
-    }*/
   }
 
   if (prev_tst_state != tst_state) {
@@ -581,13 +566,13 @@ void remoteManual(int nodeID, String command){
   if (command == "off") {
     diagBuff.diagCode = FULLOFF;    
   }
-  else if (command == "red") {
+  else if (command == "rouge") {
     diagBuff.diagCode = FULLRED;    
   }
-  else if (command == "green") {
+  else if (command == "vert") {
     diagBuff.diagCode = FULLGREEN;    
   }
-  else if (command == "blue") {
+  else if (command == "bleu") {
     diagBuff.diagCode = FULLBLUE;    
   }
   
@@ -642,6 +627,7 @@ void cmd_auto(MyCommandParser::Argument *args, char *response) {
   int nodeID = (int32_t)args[0].asInt64;
   diagBuff.mode = AUTO;
   radio.sendWithRetry(3, (const void*)(&diagBuff), sizeof(diagBuff));
+  tst_state = STANDBY;
 }
 
 void cmd_ecoute(MyCommandParser::Argument *args, char *response) {
