@@ -27,6 +27,11 @@
 #include "parameters.h"
 #include "hardware.h"
 #include "wirelessDMX.h"
+#include <CommandParser.h>
+
+typedef CommandParser<> MyCommandParser;
+
+MyCommandParser parser;
 /*********************************************************************************************/
 
 int mode = 1 ; // 1=receiver ; 2= transmitter; 3 =receiverStruct
@@ -52,6 +57,14 @@ void setup() {
 #ifdef DEBUG
   Serial.print("Wait for packet ") ; Serial.print(state) ; Serial.println("...") ;
 #endif
+parser.registerCommand("manuel", "si", &cmd_manual);
+parser.registerCommand("ecoute", "", &cmd_ecoute);
+parser.registerCommand("stop", "", &cmd_stop);
+parser.registerCommand("getstate", "i", &cmd_getstate);
+parser.registerCommand("auto", "i", &cmd_auto);
+
+
+ 
 }
 //___________________________________________
 
@@ -469,10 +482,17 @@ void IHM(void){
   
   if (Serial.available() > 0)
   {
-    String input = Serial.readString();
-    input.trim();
+    //String input = Serial.readString();
+    //input.trim();
+    char line[128];
+    size_t lineLength = Serial.readBytesUntil('\n', line, 127);
+    line[lineLength] = '\0';
+    
+    char response[MyCommandParser::MAX_RESPONSE_SIZE];
+    parser.processCommand(line, response);
+    Serial.println(response);
 
-    if (input == "ecoute"){   
+    /*if (input == "ecoute"){   
       tst_state = LISTENER;
     } 
     else if (input == "getstate"){     
@@ -485,7 +505,7 @@ void IHM(void){
     }
     else {
       tst_state = STANDBY;
-    }
+    }*/
   }
 
   if (prev_tst_state != tst_state) {
@@ -558,10 +578,7 @@ int nodeDiagnostic(int nodeID){
 void remoteManual(int nodeID, String command){
   diagBuff.mode = REMOTEMANUAL;
    
-  if (command == "auto") {
-    diagBuff.mode = AUTO;   
-  } 
-  else if (command == "off") {
+  if (command == "off") {
     diagBuff.diagCode = FULLOFF;    
   }
   else if (command == "red") {
@@ -606,4 +623,38 @@ void fullBlue() {
     }
     pixels.show();
 }
+
+
+/**PARSER **/
+void cmd_manual(MyCommandParser::Argument *args, char *response) {
+  String color = args[0].asString;
+  int nodeID = (int32_t)args[1].asInt64;
+  //Serial.print("Couleur: "); Serial.println(color);
+  //Serial.print("NodeID: "); Serial.println(nodeID);
+  
+  tst_state = MANUALMODE;
+  //Serial.print("Command sent: "); Serial.println(input);
+  remoteManual(3,  color);
+
+}
+
+void cmd_auto(MyCommandParser::Argument *args, char *response) {
+  int nodeID = (int32_t)args[0].asInt64;
+  diagBuff.mode = AUTO;
+  radio.sendWithRetry(3, (const void*)(&diagBuff), sizeof(diagBuff));
+}
+
+void cmd_ecoute(MyCommandParser::Argument *args, char *response) {
+  tst_state = LISTENER;
+}
+
+void cmd_stop(MyCommandParser::Argument *args, char *response) {
+  tst_state = STANDBY;
+}
+
+void cmd_getstate(MyCommandParser::Argument *args, char *response) {
+  tst_state = ONEDIAG;
+}
+
+
 
