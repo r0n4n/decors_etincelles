@@ -592,13 +592,19 @@ void remoteManual(int nodeID, String command){
     diagBuff.diagCode = FULLBLUE;    
   }
   
-
-  //Serial.println("Send request...");
-  if (radio.sendWithRetry(nodeID, (const void*)(&diagBuff), sizeof(diagBuff))){
-    //Serial.println("Comm with node ok!");
+  if (nodeID==0){
+    for (int i=PREMRECEIV;i<DERRECEIV;i++){
+      radio.sendWithRetry(i, (const void*)(&diagBuff), sizeof(diagBuff));
+    }
   }
   else {
-    //Serial.println(" Pas de réponse...");
+    //Serial.println("Send request...");
+    if (radio.sendWithRetry(nodeID, (const void*)(&diagBuff), sizeof(diagBuff))){
+      //Serial.println("Comm with node ok!");
+    }
+    else {
+      //Serial.println(" Pas de réponse...");
+    }
   }
 }
 
@@ -642,7 +648,15 @@ void cmd_manual(MyCommandParser::Argument *args, char *response) {
 void cmd_auto(MyCommandParser::Argument *args, char *response) {
   int nodeID = (int32_t)args[0].asInt64;
   diagBuff.mode = AUTO;
-  radio.sendWithRetry(nodeID, (const void*)(&diagBuff), sizeof(diagBuff));
+
+  if (nodeID==0){
+    for (int i=PREMRECEIV;i<DERRECEIV;i++){
+      radio.sendWithRetry(i, (const void*)(&diagBuff), sizeof(diagBuff));
+    }
+  }
+  else {
+    radio.sendWithRetry(nodeID, (const void*)(&diagBuff), sizeof(diagBuff));
+  }
   tst_state = STANDBY;
 }
 

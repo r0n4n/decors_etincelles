@@ -20,6 +20,8 @@
 #define TRANSMITTERID 1 // L'adresse réseau de l'émetteur
 #define BROADCASTID 2 // L'adresse où le DMX est broadcasté 
 #define NODEID 4 // L'adresse réseau du récepteur 
+#define PREMRECEIV 10 // L'adresse réseau du premier récepteur 
+#define DERRECEIV 18 // L'adresse réseau du dernier récepteur 
 //***********************************************************************
 
 /** TESTEUR ETATS **/
