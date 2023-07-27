@@ -19,7 +19,7 @@
 #define NETWORKID 100 //the same on all nodes that talk to each other
 #define TRANSMITTERID 1 // L'adresse réseau de l'émetteur
 #define BROADCASTID 2 // L'adresse où le DMX est broadcasté 
-#define NODEID 3 // L'adresse réseau du récepteur 
+#define NODEID 11 // L'adresse réseau du récepteur 
 #define TESTEURID 4 // L'adresse réseau du testeur réseau 
 //***********************************************************************
 /** CODE DIAG **/ 

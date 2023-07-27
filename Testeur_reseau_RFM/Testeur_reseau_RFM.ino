@@ -81,7 +81,7 @@ void loop() {
       break;
     case ONEDIAG:
       //Serial.println("Onediag");
-      if (nodeDiagnostic(3)==1) {
+      if (nodeDiagnostic(0)==1) {
         tst_state = STANDBY;
       } 
       break;
@@ -517,47 +517,52 @@ void IHM(void){
 
 #define SENDREQUEST 0
 #define WAITFDK 1
-int nodeDiagnostic(int nodeID){
-  diagBuff.diagCode = DIAGCODE;
-  static uint8_t diagSeqState = SENDREQUEST;  
-  //Serial.println(diagSeqState);
-  switch (diagSeqState) {
-    case SENDREQUEST:
-      Serial.println("Send request...");
-      if (radio.sendWithRetry(nodeID, (const void*)(&diagBuff), sizeof(diagBuff))){
-        //Serial.println("Comm with node ok!");
-        diagSeqState = WAITFDK;
-      }
-      else {
-        //Serial.println(" Pas de réponse...");
-      }
-      
-    case WAITFDK:
-      //Serial.println("En attend du retour du diagnostic ...");
-      if (radio.receiveDone())
-      {
-        //Serial.println("Message received");
-        if (radio.DATALEN == sizeof(DiagStatus) && radio.SENDERID == nodeID)
-        {
-          if (radio.ACKRequested())
-          {
-            radio.sendACK();
-            delay(10);
-          }
-          DiagStatus diagStatus;
-          diagStatus = *(DiagStatus*)radio.DATA; 
-          Serial.print("Comm status du node "); Serial.println(nodeID);
-          Serial.print("   Broadcast RSSI: ");Serial.println(diagStatus.broadcast_RSSI);
-          Serial.print("   Qualité comm :") ; Serial.print(diagStatus.trameCntOk) ; Serial.println("/10") ;
-          diagSeqState = SENDREQUEST;
-          return 1; 
-        }
-      }    
-      break;
-    default:
-      break;
+int nodeDiagnostic(int _nodeID){
+  static int nodeID = 0;
+  if  (_nodeID!=0){
+    nodeID = _nodeID;
   }
-  return 0;
+    diagBuff.diagCode = DIAGCODE;
+    static uint8_t diagSeqState = SENDREQUEST;  
+    //Serial.println(diagSeqState);
+    switch (diagSeqState) {
+      case SENDREQUEST:
+        Serial.println("Send request...");
+        if (radio.sendWithRetry(nodeID, (const void*)(&diagBuff), sizeof(diagBuff))){
+          //Serial.println("Comm with node ok!");
+          diagSeqState = WAITFDK;
+        }
+        else {
+          //Serial.println(" Pas de réponse...");
+        }
+        
+      case WAITFDK:
+        //Serial.println("En attend du retour du diagnostic ...");
+        if (radio.receiveDone())
+        {
+          //Serial.println("Message received");
+          if (radio.DATALEN == sizeof(DiagStatus) && radio.SENDERID == nodeID)
+          {
+            if (radio.ACKRequested())
+            {
+              radio.sendACK();
+              delay(10);
+            }
+            DiagStatus diagStatus;
+            diagStatus = *(DiagStatus*)radio.DATA; 
+            Serial.print("Comm status du node "); Serial.println(nodeID);
+            Serial.print("   Broadcast RSSI: ");Serial.println(diagStatus.broadcast_RSSI);
+            Serial.print("   Qualité comm :") ; Serial.print(diagStatus.trameCntOk) ; Serial.println("/10") ;
+            diagSeqState = SENDREQUEST;
+            return 1; 
+          }
+        }    
+        break;
+      default:
+        break;
+    }
+    return 0;
+  
 }
 
 void remoteManual(int nodeID, String command){
@@ -619,14 +624,14 @@ void cmd_manual(MyCommandParser::Argument *args, char *response) {
   
   tst_state = MANUALMODE;
   //Serial.print("Command sent: "); Serial.println(input);
-  remoteManual(3,  color);
+  remoteManual(nodeID,  color);
 
 }
 
 void cmd_auto(MyCommandParser::Argument *args, char *response) {
   int nodeID = (int32_t)args[0].asInt64;
   diagBuff.mode = AUTO;
-  radio.sendWithRetry(3, (const void*)(&diagBuff), sizeof(diagBuff));
+  radio.sendWithRetry(nodeID, (const void*)(&diagBuff), sizeof(diagBuff));
   tst_state = STANDBY;
 }
 
@@ -639,7 +644,12 @@ void cmd_stop(MyCommandParser::Argument *args, char *response) {
 }
 
 void cmd_getstate(MyCommandParser::Argument *args, char *response) {
+  int nodeID = (int32_t)args[0].asInt64;
+  Serial.print("NodeID: "); Serial.println(nodeID);
   tst_state = ONEDIAG;
+  if (nodeDiagnostic(nodeID)==1) {
+        tst_state = STANDBY;
+  } 
 }
 
 

@@ -167,8 +167,9 @@ void listenRadio(void){
   if (bPacketRcv)
   { 
     last_reception = millis() ;
-    if (radio.DATALEN == sizeof(diagBuff) && radio.SENDERID == TESTEURID)
+    if (radio.DATALEN == sizeof(diagBuff) && radio.SENDERID == TESTEURID && radio.TARGETID == NODEID)
     {    
+      //Serial.println("Message testeur reçu");
       diagBuff = *(DiagBuff*)radio.DATA;
       //Serial.println(diagBuff.diagCode);
       if (diagBuff.diagCode == DIAGCODE){ //
