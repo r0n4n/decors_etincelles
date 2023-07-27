@@ -73,8 +73,8 @@ typedef struct {
 } DiagStatus;
 
 typedef struct {
-  uint8_t mode;
-  uint8_t diagCode;
+  int mode;
+  int diagCode;
 } DiagBuff;
 DiagBuff diagBuff;
 /**********************************************/
