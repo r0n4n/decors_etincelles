@@ -517,8 +517,10 @@ void IHM(void){
 
 #define SENDREQUEST 0
 #define WAITFDK 1
+#define DIAGTIMEOUT 5000
 int nodeDiagnostic(int _nodeID){
   static int nodeID = 0;
+  static unsigned long requestTime = 0; 
   if  (_nodeID!=0){
     nodeID = _nodeID;
   }
@@ -528,12 +530,16 @@ int nodeDiagnostic(int _nodeID){
     switch (diagSeqState) {
       case SENDREQUEST:
         Serial.println("Send request...");
+        requestTime = millis();
         if (radio.sendWithRetry(nodeID, (const void*)(&diagBuff), sizeof(diagBuff))){
           //Serial.println("Comm with node ok!");
           diagSeqState = WAITFDK;
+          
         }
         else {
           //Serial.println(" Pas de réponse...");
+          Serial.println("Diagnostic Timeout");
+          return 1;
         }
         
       case WAITFDK:
@@ -556,6 +562,11 @@ int nodeDiagnostic(int _nodeID){
             diagSeqState = SENDREQUEST;
             return 1; 
           }
+        }
+        if (millis()-requestTime >DIAGTIMEOUT){
+          Serial.println("Diagnostic Timeout");
+          diagSeqState = SENDREQUEST;
+          return 1;
         }    
         break;
       default:
