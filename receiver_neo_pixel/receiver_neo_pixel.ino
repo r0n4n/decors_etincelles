@@ -64,7 +64,7 @@ void loop() {
   
   switch (mode){
     case 1: 
-      printReception();
+      //printReception();
       traitement();
       break;
     case 2:
