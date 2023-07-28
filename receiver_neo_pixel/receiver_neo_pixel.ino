@@ -147,12 +147,12 @@ void traitement() {
       //Serial.print("Wait for packet ") ; Serial.print(state) ; Serial.println("...") ;
     }
   }
-  if (packet_id == 6 ) {
+  /*if (packet_id == 6 ) {
     
     //pixels.show(); // on met à jour les pîxels de la bande
     state = start_packet ; // on retourne à l'état initial : attendre le premier paquet
 
-  }
+  }*/
   // Serial.flush(); //make sure all serial data is clocked out before sleeping the MCU // voir si nécessaire
   if (first_iter == true) 
     first_iter = false;
