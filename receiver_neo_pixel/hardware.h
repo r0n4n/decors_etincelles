@@ -26,6 +26,7 @@
 #define LED3 8
 #define T1 3 // Transistor 1 
 #define T2 4 // Transistor 2 
+#define PIN_RELAY 5
 #define BANDE1 A3 // pin pour contrôler la bande Led
 //********************************************************************************
 

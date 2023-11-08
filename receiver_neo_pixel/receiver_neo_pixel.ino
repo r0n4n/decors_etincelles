@@ -468,9 +468,11 @@ void remoteManual(void){
  if (bPacketRcv){
    if (diagBuff.diagCode == FULLOFF){
      black_strip();
+     //digitalWrite(PIN_RELAY, LOW);
    }
    else if (diagBuff.diagCode == FULLRED){
      fullRed();
+     //digitalWrite(PIN_RELAY, HIGH);
    }
    else if (diagBuff.diagCode == FULLGREEN){
      fullGreen();
@@ -548,3 +550,11 @@ void fullBlue() {
     pixels.show();
 }
 
+void controlRelay(){
+  if (packet_id == 1){
+    if (radio.DATA[0]>150)
+        digitalWrite(PIN_RELAY, HIGH);
+    else
+        digitalWrite(PIN_RELAY, LOW);    
+  }
+}
