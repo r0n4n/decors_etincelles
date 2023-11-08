@@ -41,6 +41,7 @@ unsigned long previousMillis = 0;  // will store last time LED was updated
 // Variables will change:
 int ledState = LOW;  // ledState used to set the LED
 byte ackCount=0;
+int _nodeID =0;
 
 
 
@@ -62,6 +63,7 @@ parser.registerCommand("ecoute", "", &cmd_ecoute);
 parser.registerCommand("stop", "", &cmd_stop);
 parser.registerCommand("getstate", "i", &cmd_getstate);
 parser.registerCommand("auto", "i", &cmd_auto);
+parser.registerCommand("SEQ", "i", &cmd_seq);
 
 
  
@@ -89,7 +91,10 @@ void loop() {
       //remoteManual(3,"RED");
       //tst_state = STANDBY;
       break;
-    case 4:
+    case SEQMODE:
+      seqRVB(_nodeID);
+      break;
+    case 5:
       stripLEDManual();
       break;
    }
@@ -507,6 +512,9 @@ void IHM(void){
       case MANUALMODE:
        Serial.println("MANUALMODE...");
         break;
+      case SEQMODE:
+       Serial.println("SEQMODE");
+        break;
       default: 
         break;
     }
@@ -608,6 +616,17 @@ void remoteManual(int nodeID, String command){
   }
 }
 
+void seqRVB(int nodeID){
+  remoteManual(nodeID, "rouge");
+  delay(400);
+  remoteManual(nodeID, "vert");
+  delay(400);
+  remoteManual(nodeID, "bleu");
+  delay(400);
+  remoteManual(nodeID, "off");
+  delay(400);
+}
+
 /****** Programme test strip LEDs  ***/
 
 void fullRed() {  
@@ -675,6 +694,12 @@ void cmd_getstate(MyCommandParser::Argument *args, char *response) {
   if (nodeDiagnostic(nodeID)==1) {
         tst_state = STANDBY;
   } 
+}
+
+void cmd_seq(MyCommandParser::Argument *args, char *response) {
+  _nodeID = (int32_t)args[0].asInt64;
+  Serial.print("NodeID: "); Serial.println(_nodeID);
+  tst_state = SEQMODE;
 }
 
 

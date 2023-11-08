@@ -29,6 +29,7 @@
 #define LISTENER 1
 #define ONEDIAG 2
 #define MANUALMODE 3 
+#define SEQMODE 4
 /***********************/
 
 /** CODE DIAG **/ 
