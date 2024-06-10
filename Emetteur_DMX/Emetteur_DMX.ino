@@ -97,7 +97,8 @@ void loop () { // Boucle du programme principal
 
 #ifndef DMX
 void sendManualTram(){
-  static int bRVBSequence = false; 
+  static int bRVBSequence = false;
+  static bool bWipe = false;  
   if (Serial.available() > 0)
   {
     String input = Serial.readString();
@@ -107,8 +108,13 @@ void sendManualTram(){
       Serial.println(input);
       bRVBSequence = true;
     } 
+     if (input == "wipe"){   
+      Serial.println(input);
+      bWipe = true;
+    } 
     else {
       bRVBSequence = false;
+      bWipe = false;
       if (input == "off"){
         fulloff(manData);
         Serial.println(input);
@@ -128,8 +134,7 @@ void sendManualTram(){
       else if (input == "bleu"){
         fullBlue(manData);   
         Serial.println(input);
-      }
-     
+      }     
       else
         Serial.println("erreur commande");
         sendPackets(manData);
@@ -138,6 +143,11 @@ void sendManualTram(){
 
   if (bRVBSequence) {
     RVBSequence(manData, 500);
+    sendPackets(manData);
+  }
+  if (bWipe) {
+    colorWipeRGB(manData, 151, 31, 20);
+    //colorWipe(manData, 0, 0, 255, 151, 31, 20);
     sendPackets(manData);
   }
     
