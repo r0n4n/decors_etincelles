@@ -134,9 +134,14 @@ void sendManualTram(){
       else if (input == "bleu"){
         fullBlue(manData);   
         Serial.println(input);
-      }     
-      else
+      }
+      else if (input == "address"){
+        sendAddress(manData);   
+        Serial.println(input);
+      }      
+      else{
         Serial.println("erreur commande");
+      }
         sendPackets(manData);
     }
   }
