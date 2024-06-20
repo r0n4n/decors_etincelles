@@ -83,7 +83,7 @@ DiagBuff diagBuff;
 /**********************************************/
 
 /************** OBJECTS ***********************/
-Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, BANDE1, NEO_GRB + NEO_KHZ800); // Création de l'objet pixel qui gère la bande numérique du pin BANDE1
+Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, BANDE1, NEO_BRG + NEO_KHZ800); // Création de l'objet pixel qui gère la bande numérique du pin BANDE1
 RFM69 radio = RFM69(RFM69_CS, RFM69_IRQ, IS_RFM69HCW, RFM69_IRQN); // Création de l'objet radio qui gère le module RFM69
 /***********************************************/
 

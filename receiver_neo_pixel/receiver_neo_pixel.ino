@@ -522,7 +522,7 @@ void stripLEDManual(void){
       fullRed();
     else if (input == "vert")
       fullGreen();
-    else if (input == "blue")
+    else if (input == "bleu")
       fullBlue();
     
       
@@ -531,21 +531,21 @@ void stripLEDManual(void){
 
 void fullRed() {  
     for(uint16_t i=0; i<pixels.numPixels(); i++) {
-        pixels.setPixelColor(i, pixels.Color(255,0,0 ) );
+        pixels.setPixelColor(i, pixels.Color(255,0,0));
     }
     pixels.show();
 }
 
 void fullGreen() {  
     for(uint16_t i=0; i<pixels.numPixels(); i++) {
-        pixels.setPixelColor(i, pixels.Color(0,0,255 ) );
+        pixels.setPixelColor(i, pixels.Color(0,255,0));
     }
     pixels.show();
 }
 
 void fullBlue() {  
     for(uint16_t i=0; i<pixels.numPixels(); i++) {
-        pixels.setPixelColor(i, pixels.Color(0,255,0 ) );
+        pixels.setPixelColor(i, pixels.Color(0,0,255));
     }
     pixels.show();
 }
