@@ -29,7 +29,7 @@
 #include "wirelessDMX.h"
 /*********************************************************************************************/
 
-int mode = 1 ; // 1=receiver ; 2= transmitter; 3 =receiverStruct
+int mode = 1 ; // 1=receiver ; 2= transmitter; 3 =receiverStruct ; 4=stripLed 
 #define AUTOMODE 1;
 #define REMOTEMANUALMODE 2;
 #define LOCALMANUALMODE 3;
@@ -64,8 +64,11 @@ void loop() {
   
   switch (mode){
     case 1: 
+      //printPacket(1,0,10);
+      buildDmxFrame();
+      //printDMX(1,65);
       //printReception();
-      traitement();
+      updateDevices();
       break;
     case 2:
       remoteManual();
@@ -86,6 +89,7 @@ static unsigned int print_decimation = 100000;
 if (counter>=print_decimation){
     Serial.print("Broadcast RSSI: ");Serial.println(broadcast_RSSI);
     Serial.print("Qualité comm :") ; Serial.print(trameCntOk) ; Serial.println("/10") ;
+    //printDMX(40,50);
     //Serial.print("Période :") ; Serial.println(package_rcv_delta_t) ;
     //Serial.print("Débit :") ; Serial.println(debit) ;
 
@@ -94,14 +98,13 @@ if (counter>=print_decimation){
       Serial.print(packetIdBuff[idx]);
     }
     Serial.println("") ;*/
-    
-
-
     counter = 0;
   }
   else 
     counter++;
 }
+
+
 
 void traitement() {  
   digitalWrite(6, 1);
@@ -156,6 +159,7 @@ void traitement() {
   // Serial.flush(); //make sure all serial data is clocked out before sleeping the MCU // voir si nécessaire
   if (first_iter == true) 
     first_iter = false;
+
 }
 
 
@@ -215,18 +219,19 @@ void listenRadio(void){
     }
     radio.receiveDone(); //put back the radio in RX mode
   } 
-    
-    
-  
-
-
-
- 
 }
 
-void printDMX(){
-  if (packet_id == 1){
-    for (int i = 0;i<10;i++){
+void printDMX(uint8_t startAdr, uint8_t stopAdr){
+  Serial.print(startAdr); Serial.print("-"); Serial.print(stopAdr) ;Serial.print(": ");
+  for (uint8_t i = startAdr; i<= stopAdr ; i++){
+    Serial.print(dmxData[i]);Serial.print(" ");
+  }
+  Serial.println();
+}
+
+void printPacket(int packetNbr, int start, int stop){
+  if (packet_id == packetNbr){
+    for (int i = start;i<stop;i++){
       Serial.print(theData.packet[i]); Serial.print(" ");
     }
     Serial.println();
@@ -270,6 +275,45 @@ void receiveStruct(void){
   }
   
   //Blink(LED2,500);
+}
+
+// build DMX frame with packets received
+bool buildDmxFrame(){
+  static uint8_t nxt_packetId_ = 1 ; // next packet expected to rebuild the DMX frame
+  if (bPacketRcv) {
+    int adressOffset = (packet_id-1)*PACKET_SIZE;
+    bDMXFrameRdy = false;
+    for (uint8_t i = 1; i<=PACKET_SIZE ;i++ ){
+      if (radio.DATA[i] == 1 ) { // remove zero values
+        dmxData[adressOffset + i] = 0 ;
+      }
+      else {
+        dmxData[adressOffset + i] = radio.DATA[i] ;
+      }
+    }
+  }
+  
+ /* if (packet_id == PACKET_NBR && bDMXFrameOk){
+    return true;
+    bDMXFrameRdy = true;
+  }
+  else 
+    return false;
+  }*/
+  return true;
+  //Serial.print("Value: ");Serial.println(dmxData[58]);
+}
+
+void updateDevices(){
+  //if (bDMXFrameRdy){
+    for (int i = 0; i < NUMPIXELS  ; i++) { // parcours les éléments du tableau reçu
+      // set color for RBG strip LEDs
+      //pixels.setPixelColor(i, pixels.Color(dmxData[DECOR_DMX_ADRESS+3*i], dmxData[DECOR_DMX_ADRESS + 3*i + 2], dmxData[DECOR_DMX_ADRESS+ 3*i +1])); // change the color
+      // set color for RGB strip LEDs
+      pixels.setPixelColor(i, dmxData[DECOR_DMX_ADRESS+3*i], dmxData[DECOR_DMX_ADRESS + 3*i + 1], dmxData[DECOR_DMX_ADRESS+ 3*i +2]); // change the color
+    }
+    pixels.show();
+  //}
 }
 
 // _________________________________________________________________________
@@ -359,6 +403,10 @@ void stripLed_init(){
   if (F_CPU == 16000000) clock_prescale_set(clock_div_1);
 #endif
   pixels.begin(); // This initializes the NeoPixel library.
+  //uint8_t *pixelsPtr;
+  //pixelsPtr = pixels.getPixels();
+  //pixelsPtr = dmxData ; 
+
   //*****************************************************************
   black_strip() ;
 }
@@ -428,7 +476,7 @@ void checkCom(){
   static int packetCounter = 0;
   static int trameCnt = 0;
   static int trameCntOkTmp = 0;
-  bool paquet_perdu = false; // True si un paquet n'a pas été reçu, false sinon
+  static bool paquet_perdu = false; // True si un paquet n'a pas été reçu, false sinon
   #define TRAMESNBRMAX 10
   
   if (trameCnt>=TRAMESNBRMAX){
@@ -449,8 +497,14 @@ void checkCom(){
       paquet_perdu = true;
     }
 
-    if (packet_id==PACKET_NBR && !paquet_perdu){ // si à la fin de la trame aucun paquet n'a été perdu 
-      trameCntOkTmp++;
+    if (packet_id==PACKET_NBR){ // si à la fin de la trame aucun paquet n'a été perdu 
+      if (paquet_perdu){
+        bDMXFrameOk = false;
+      }
+      else{
+        trameCntOkTmp++;
+        bDMXFrameOk = true;
+      } 
     }
 
   }

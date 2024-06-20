@@ -31,6 +31,10 @@
 #define CHANNELS_NBR (NUMPIXELS*CHANNELS_PER_PIXEL/PIX_PER_GROUP) // on détermine le nombre de canaux nécessaires
 #define LAST_DMX_ADRESS (DECOR_DMX_ADRESS+CHANNELS_NBR-1)
 
+// DMX parameters 
+#define DMXSERIAL_MAX 512 // max. number of supported DMX data channels
+uint8_t  dmxData[DMXSERIAL_MAX];
+
 
 /** CODE DIAG **/ 
 #define AUTO 0 
@@ -47,6 +51,8 @@ int state ; // L'id du paquet qui est attendu
 int packet_id ; // L'id du paquet qui vient d'être reçu
 int last_packet_id ; // ID du dernier paquet reçu 
 int trameCntOk = 0;
+bool bDMXFrameOk = false;
+bool bDMXFrameRdy = false;
 int nbr_paquet_perdu = 0; // compteur du nombre de paquets perdu 
 int start_index = 0  ; // premier indice dans le premier paquet que le récepteur doit interpréter
 int stop_index = 0 ; // dernier indice dans le dernier paquet que le récepteur doit interpréter
