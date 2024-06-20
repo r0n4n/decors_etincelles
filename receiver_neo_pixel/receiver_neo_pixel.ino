@@ -312,7 +312,15 @@ void updateDevices(){
       // set color for RGB strip LEDs
       pixels.setPixelColor(i, dmxData[DECOR_DMX_ADRESS+3*i], dmxData[DECOR_DMX_ADRESS + 3*i + 1], dmxData[DECOR_DMX_ADRESS+ 3*i +2]); // change the color
     }
+    
+    for (int i = 0; i < strip2.numPixels(); i++) { // parcours les éléments du tableau reçu
+      // set color for RBG strip LEDs
+      //pixels.setPixelColor(i, pixels.Color(dmxData[DECOR_DMX_ADRESS+3*i], dmxData[DECOR_DMX_ADRESS + 3*i + 2], dmxData[DECOR_DMX_ADRESS+ 3*i +1])); // change the color
+      // set color for RGB strip LEDs
+      strip2.setPixelColor(i, dmxData[STRIP2_ADDRESS+3*i], dmxData[STRIP2_ADDRESS + 3*i + 1], dmxData[STRIP2_ADDRESS+ 3*i +2]); // change the color
+    }
     pixels.show();
+    strip2.show();
   //}
 }
 
@@ -403,12 +411,20 @@ void stripLed_init(){
   if (F_CPU == 16000000) clock_prescale_set(clock_div_1);
 #endif
   pixels.begin(); // This initializes the NeoPixel library.
+  strip2.begin();
   //uint8_t *pixelsPtr;
   //pixelsPtr = pixels.getPixels();
   //pixelsPtr = dmxData ; 
 
   //*****************************************************************
-  black_strip() ;
+  //black_strip(pixels) ;
+  //black_strip(strip2) ;
+  //fullRed(pixels);
+  //fullGreen(pixels);
+  //fullBlue(pixels);
+  //fullBlue(strip2);
+  
+  
 }
 
 void initialisation(void) {
@@ -604,11 +620,11 @@ void fullBlue() {
     pixels.show();
 }
 
-void controlRelay(){
+/*void controlRelay(){
   if (packet_id == 1){
     if (radio.DATA[0]>150)
         digitalWrite(PIN_RELAY, HIGH);
     else
         digitalWrite(PIN_RELAY, LOW);    
   }
-}
+}*/

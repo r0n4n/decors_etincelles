@@ -20,19 +20,25 @@
 #define RFM69_IRQN 0 // Pin 2 is IRQ 0!
 #define RFM69_RST 9 // RST PIN 
 
-// HARDWARE OUTPUTS
+// PIN actionneurs
 #define LED1 6
 #define LED2 7
 #define LED3 8
 #define T1 3 // Transistor 1 
 #define T2 4 // Transistor 2 
-#define PIN_RELAY 5
+//#define PIN_RELAY 5
 #define BANDE1 A3 // pin pour contrôler la bande Led
+#define PIN_STRIP2 5 
 //********************************************************************************
+
+// Strips LEDs config
+#define STRIP1_LEDS_NBR 27
+#define STRIP2_LEDS_NBR 19
+#define STRIP2_ADDRESS DECOR_DMX_ADRESS + 3*STRIP1_LEDS_NBR
+//#define RBG
 
 
 //*********************  Renommage des entrées sorties **************************
-
 #define RECEPTION LED3 // la led clignote dès que le récepteur reçoit un message 
 //**********************************************************************************
 
