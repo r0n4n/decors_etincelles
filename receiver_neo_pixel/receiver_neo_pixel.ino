@@ -307,17 +307,24 @@ bool buildDmxFrame(){
 void updateDevices(){
   //if (bDMXFrameRdy){
     for (int i = 0; i < NUMPIXELS  ; i++) { // parcours les éléments du tableau reçu
+      #ifdef RBG
       // set color for RBG strip LEDs
-      //pixels.setPixelColor(i, pixels.Color(dmxData[DECOR_DMX_ADRESS+3*i], dmxData[DECOR_DMX_ADRESS + 3*i + 2], dmxData[DECOR_DMX_ADRESS+ 3*i +1])); // change the color
+      pixels.setPixelColor(i, pixels.Color(dmxData[DECOR_DMX_ADRESS+3*i], dmxData[DECOR_DMX_ADRESS + 3*i + 2], dmxData[DECOR_DMX_ADRESS+ 3*i +1])); // change the color
+      #else if RGB 
       // set color for RGB strip LEDs
       pixels.setPixelColor(i, dmxData[DECOR_DMX_ADRESS+3*i], dmxData[DECOR_DMX_ADRESS + 3*i + 1], dmxData[DECOR_DMX_ADRESS+ 3*i +2]); // change the color
+      #endif
     }
     
+    // strip2 update
     for (int i = 0; i < strip2.numPixels(); i++) { // parcours les éléments du tableau reçu
+      #ifdef RBG
       // set color for RBG strip LEDs
-      //pixels.setPixelColor(i, pixels.Color(dmxData[DECOR_DMX_ADRESS+3*i], dmxData[DECOR_DMX_ADRESS + 3*i + 2], dmxData[DECOR_DMX_ADRESS+ 3*i +1])); // change the color
+      strip2.setPixelColor(i, pixels.Color(dmxData[DECOR_DMX_ADRESS+3*i], dmxData[DECOR_DMX_ADRESS + 3*i + 2], dmxData[DECOR_DMX_ADRESS+ 3*i +1])); // change the color
+      #else if RGB
       // set color for RGB strip LEDs
       strip2.setPixelColor(i, dmxData[STRIP2_ADDRESS+3*i], dmxData[STRIP2_ADDRESS + 3*i + 1], dmxData[STRIP2_ADDRESS+ 3*i +2]); // change the color
+      #endif
     }
     pixels.show();
     strip2.show();
