@@ -12,7 +12,6 @@
 //***********************************************************************
 
 // How many NeoPixels are attached to the Arduino?
-#define NUMPIXELS      50.0
 #define CHANNELS_PER_PIXEL 3 // RVB
 #define PIX_PER_GROUP 1 // number of pixels together 
 #define PACKET_SIZE 60 // size of a packet received
@@ -88,8 +87,8 @@ DiagBuff diagBuff;
 /**********************************************/
 
 /************** OBJECTS ***********************/
-Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, BANDE1 , NEO_BRG + NEO_KHZ800); // Création de l'objet pixel qui gère la bande numérique du pin BANDE1
-Adafruit_NeoPixel strip2 = Adafruit_NeoPixel(STRIP2_LEDS_NBR, PIN_STRIP2, NEO_BRG + NEO_KHZ800); // Création de l'objet pixel qui gère la bande numérique du pin BANDE1
+Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN_STRIP1 , NEO_BRG + NEO_KHZ800); 
+Adafruit_NeoPixel strip2 = Adafruit_NeoPixel(STRIP2_LEDS_NBR, PIN_STRIP2, NEO_BRG + NEO_KHZ800); 
 
 RFM69 radio = RFM69(RFM69_CS, RFM69_IRQ, IS_RFM69HCW, RFM69_IRQN); // Création de l'objet radio qui gère le module RFM69
 /***********************************************/

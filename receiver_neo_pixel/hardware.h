@@ -27,11 +27,12 @@
 #define T1 3 // Transistor 1 
 #define T2 4 // Transistor 2 
 //#define PIN_RELAY 5
-#define BANDE1 A3 // pin pour contrôler la bande Led
+#define PIN_STRIP1 A3 // pin pour contrôler la bande Led
 #define PIN_STRIP2 5 
 //********************************************************************************
 
 // Strips LEDs config
+#define NUMPIXELS      50.0
 #define STRIP1_LEDS_NBR 27
 #define STRIP2_LEDS_NBR 19
 #define STRIP2_ADDRESS DECOR_DMX_ADRESS + 3*STRIP1_LEDS_NBR
