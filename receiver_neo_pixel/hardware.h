@@ -35,7 +35,7 @@
 #define STRIP1_LEDS_NBR 27
 #define STRIP2_LEDS_NBR 19
 #define STRIP2_ADDRESS DECOR_DMX_ADRESS + 3*STRIP1_LEDS_NBR
-//#define RBG
+#define RBG
 
 
 //*********************  Renommage des entrées sorties **************************
