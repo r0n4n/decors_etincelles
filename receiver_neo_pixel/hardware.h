@@ -21,9 +21,9 @@
 #define RFM69_RST 9 // RST PIN 
 
 // PIN actionneurs
+#define LED_ONOFF 8
+#define LED_RECEPTION 7
 #define LED1 6
-#define LED2 7
-#define LED3 8
 #define T1 3 // Transistor 1 
 #define T2 4 // Transistor 2 
 //#define PIN_RELAY 5
@@ -40,18 +40,9 @@
 //#define RBG
 #define RGB
 
-
-//*********************  Renommage des entrées sorties **************************
-#define RECEPTION LED3 // la led clignote dès que le récepteur reçoit un message 
-//**********************************************************************************
-
-
-
-
 // ***************** Configuration du module RFM69 *********************
 #define FREQUENCY RF69_433MHZ //Match frequency to the hardware version of the radio on your Feather
 #define IS_RFM69HCW true // set to 'true' if you are using an RFM69HCW module
 //**************************************************************************
-
 
 #endif

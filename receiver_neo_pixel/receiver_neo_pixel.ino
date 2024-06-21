@@ -378,9 +378,9 @@ void find_index() {
 
 void IOinit(void){
   //**************** CONFIG DES ENTREES/SORTIES *************
+  pinMode(LED_ONOFF, OUTPUT);
   pinMode(LED1, OUTPUT);
-  pinMode(LED2, OUTPUT);
-  pinMode(RECEPTION, OUTPUT);
+  pinMode(LED_RECEPTION, OUTPUT);
   pinMode(T1, OUTPUT) ;
   pinMode(T2, OUTPUT ) ;
   //******************************************************************
@@ -430,7 +430,8 @@ void stripLed_init(){
 void initialisation(void) {
 
   IOinit();
-  digitalWrite(LED1, HIGH) ; // set led high to show that the setup has started
+  digitalWrite(LED_ONOFF,HIGH);
+  //digitalWrite(LED_ONOFF, HIGH) ; // set led high to show that the setup has started
   stripLed_init();
   wireless_init();
   
@@ -438,7 +439,7 @@ void initialisation(void) {
   //#ifdef DEBUG || DEBUG_CONFIG
   Serial.begin(SERIAL_BAUD);
   //#endif
-  digitalWrite(LED1, LOW) ; // shows that the setup is finished
+
 }
 
 void print_config(void) {
@@ -478,13 +479,13 @@ bool _noDataSince() {
   package_rcv_delta_t = millis() - last_reception; 
   debit = 1000/float(package_rcv_delta_t); 
   if (package_rcv_delta_t > NO_DATA_SINCE) {
-    digitalWrite(RECEPTION, LOW) ;
+    digitalWrite(LED_RECEPTION, LOW) ;
     trameCntOk = 0;
     broadcast_RSSI = 0;
     return false ;
   }
   else
-    digitalWrite(RECEPTION, HIGH) ;
+    digitalWrite(LED_RECEPTION, HIGH) ;
   return true ;
 }
 
