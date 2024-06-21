@@ -47,14 +47,10 @@ byte ackCount=0;
 //________________SETUP______________________
 void setup() {
   initialisation() ; // initialise the hardware
-  find_index() ; // détermine start_index, start_index, start_packet et stop_packet  ;
   state = start_packet ; // initializes the state machine
 //#ifdef DEBUG_CONFIG
 //  print_config() ; // AFFICHE LES INFOS DU MODULES
 //#endif
-#ifdef DEBUG
-  Serial.print("Wait for packet ") ; Serial.print(state) ; Serial.println("...") ;
-#endif
 }
 //___________________________________________
 
@@ -80,7 +76,6 @@ void loop() {
       stripLEDManual();
       break;
    }
-
 }
 
 void printReception() { 
@@ -102,64 +97,6 @@ if (counter>=print_decimation){
   }
   else 
     counter++;
-}
-
-
-
-void traitement() {  
-  digitalWrite(6, 1);
-  //check if something was received 
-  if (bPacketRcv)
-  {
-    if (packet_id == PACKET_NBR ) {
-      //digitalWrite(LED2, HIGH) ;
-    }
-    else {
-      //digitalWrite(LED2, LOW) ;
-    }
-  }
-
-  if ((packet_id == state) ) { // check if the packet received is the one we are waiting for
-
-    //Serial.print("packet ") ; Serial.print(packet_id) ; Serial.println(" received") ;
-    // start_pixel = (packet_id - 1) * PIXELS_PER_PACKET ;
-    
-
-    if ((state == stop_packet) ) { // si le paquet reçu est le dernier paquet exigé
-      digitalWrite(LED1, LOW) ;
-      prepare_pixel_color1(1, stop_index, packet_id) ;
-      pixels.show(); // on met à jour les pîxels de la bande
-      state = start_packet ; // on retourne à l'état initial : attendre le premier paquet
-      //Serial.print("Wait for packet ") ; Serial.print(state) ; Serial.println("...") ;
-      //Serial.println("Strip updated!") ;
-
-    }
-
-    else if (state == start_packet) { // si le paquet reçu est le premier paquet exigé
-      digitalWrite(LED1, HIGH) ;
-      prepare_pixel_color1(start_index, PACKET_SIZE, packet_id) ;
-      state++ ; // on attend le paquet suivant
-      //Serial.print("Wait for packet ") ; Serial.print(state) ; Serial.println("...") ;
-
-    }
- 
-
-    else {
-      prepare_pixel_color1(1, PACKET_SIZE, packet_id) ;
-      state++ ; // on attend le paquet suivant
-      //Serial.print("Wait for packet ") ; Serial.print(state) ; Serial.println("...") ;
-    }
-  }
-  /*if (packet_id == 6 ) {
-    
-    //pixels.show(); // on met à jour les pîxels de la bande
-    state = start_packet ; // on retourne à l'état initial : attendre le premier paquet
-
-  }*/
-  // Serial.flush(); //make sure all serial data is clocked out before sleeping the MCU // voir si nécessaire
-  if (first_iter == true) 
-    first_iter = false;
-
 }
 
 
@@ -244,14 +181,11 @@ void sendRFMPacket(void){
 }
 
 void receiveStruct(void){
-
-  
   if (radio.receiveDone())
   {
     //Blink(LED1,500);
     Serial.print('[');Serial.print(radio.SENDERID, DEC);Serial.print("] ");
     Serial.print(" [RX_RSSI:");Serial.print(radio.readRSSI());Serial.print("]");
-  
 /*
     if (radio.DATALEN != sizeof(Payload))
       Serial.print("Invalid payload received, not matching Payload struct!");
@@ -264,16 +198,12 @@ void receiveStruct(void){
       Serial.print(theData.uptime);
       Serial.print(" temp=");
       Serial.print(theData.temp);
-    }*/
-    
-   
-    
+    }*/ 
     Serial.println();
   }
   else {
     //Serial.println("Nothing");
   }
-  
   //Blink(LED2,500);
 }
 
@@ -324,57 +254,6 @@ void updateDevices(){
   strip2.show();
 }
 
-// _________________________________________________________________________
-
-// Cette fonction reconstitue la trame DMX afin de contrôler la bande LED selon l'adressage
-void prepare_pixel_color1(int start_indice, int stop_indice, int packet_ID) {
-  // Serial.println("prepare_pixel_color1 launched") ;
-  //int pixel_offset = ((packet_ID-1)*PACKET_SIZE-DECOR_DMX_ADRESS)/CHANNELS_PER_PIXEL  ;
-  int pixel_offset = ((packet_ID - 1) * PACKET_SIZE + 1 - DECOR_DMX_ADRESS) / 3 - 1  ;
-  for (int i = start_indice; i < stop_indice  ; i += 3) { // parcours les éléments du tableau reçu
-    // Serial.print("i : ") ;   Serial.println(i) ;
-    if (radio.DATA[i] == 1 ) {
-      radio.DATA[i] = 0 ;
-    }
-    if (radio.DATA[i + 1] == 1 ) {
-      radio.DATA[i + 1] = 0 ;
-    }
-    if (radio.DATA[i + 2] == 1 ) {
-      radio.DATA[i + 2] = 0 ;
-    }
-    pixels.setPixelColor((i + 2) / 3 + pixel_offset, pixels.Color(radio.DATA[i], radio.DATA[i + 1], radio.DATA[i + 2])); // change the color
-#ifdef DEBUG
-    //    Serial.print("Pixel:") ; Serial.print((i + 2) / 3 + pixel_offset) ; Serial.print(": ") ;
-    //    Serial.print(radio.DATA[i]) ;
-    //    Serial.print(" ") ;
-    //    Serial.print(radio.DATA[i + 1]) ;
-    //    Serial.print(" ") ;
-    //    Serial.print(radio.DATA[i + 2]) ;
-    //    Serial.println(" ") ;
-#endif
-  }
-}
-
-
-
-void find_index() {
-  int packet_index = 1 ;
-
-  while ( packet_index < PACKET_ID_MAX) { // on parcourt les packets pour trouver les indices de départ et d'arriver
-    int channel_inf = (packet_index - 1) * PACKET_SIZE + 1 ;
-    int channel_sup = packet_index * PACKET_SIZE ;
-    if ( (channel_inf <= DECOR_DMX_ADRESS)   & (DECOR_DMX_ADRESS <= channel_sup)  ) {
-      start_index = DECOR_DMX_ADRESS - ((packet_index - 1) * PACKET_SIZE) ;
-      start_packet = packet_index ;
-    }
-    if (  (channel_inf <= LAST_DMX_ADRESS)   & (LAST_DMX_ADRESS <= channel_sup)  ) {
-      stop_index = LAST_DMX_ADRESS - ((packet_index - 1) * PACKET_SIZE) ;
-      stop_packet = packet_index ;
-      break ;
-    }
-    packet_index++ ;
-  }
-}
 
 void IOinit(void){
   //**************** CONFIG DES ENTREES/SORTIES *************
@@ -405,67 +284,31 @@ void wireless_init(void){
   //*****************************************************************
 }
 
+
 void stripLed_init(){
-   //************* NEOPIXEL SETTINGS *********************************
 #if defined (__AVR_ATtiny85__)
   if (F_CPU == 16000000) clock_prescale_set(clock_div_1);
 #endif
   pixels.begin(); // This initializes the NeoPixel library.
   strip2.begin();
-  //uint8_t *pixelsPtr;
-  //pixelsPtr = pixels.getPixels();
-  //pixelsPtr = dmxData ; 
-
-  //*****************************************************************
-  //black_strip(pixels) ;
-  //black_strip(strip2) ;
-  //fullRed(pixels);
-  //fullGreen(pixels);
-  //fullBlue(pixels);
-  //fullBlue(strip2);
-  
-  
 }
 
 void initialisation(void) {
-
   IOinit();
   digitalWrite(LED_ONOFF,HIGH);
-  //digitalWrite(LED_ONOFF, HIGH) ; // set led high to show that the setup has started
   stripLed_init();
   wireless_init();
-  
-  // init serial port for debugging
-  //#ifdef DEBUG || DEBUG_CONFIG
   Serial.begin(SERIAL_BAUD);
-  //#endif
-
 }
 
 void print_config(void) {
-  Serial.print("Recepteur strip led ");
-
+  Serial.print("Recepteur strip leds ");
   Serial.println("\nNetwork : ") ;
   Serial.print("Node: ") ; Serial.println(NODEID) ;
   Serial.print("NETWORKID: ") ; Serial.println(NETWORKID) ;
-  Serial.print("PACKET_SIZE: ") ; Serial.println(PACKET_SIZE) ;
   Serial.print("DECOR_DMX_ADRESS: ") ; Serial.println(DECOR_DMX_ADRESS) ;
-  Serial.print("LAST_DMX_ADRESS: ") ; Serial.println(LAST_DMX_ADRESS) ;
-
-
   Serial.println("\nDecor parameters : ") ;
   Serial.print("NUMPIXELS: ") ; Serial.println(NUMPIXELS) ;
-  Serial.print("PIX_PER_GROUP: ") ; Serial.println(PIX_PER_GROUP) ;
-  Serial.print("CHANNELS_PER_PIXEL: ") ; Serial.print(CHANNELS_PER_PIXEL) ;  Serial.println("(RVB)") ;
-  Serial.print("CHANNELS_NBR : ") ; Serial.println(CHANNELS_NBR) ;
-  //  Serial.print("PIXELS_PER_PACKET : ") ; Serial.println(PIXELS_PER_PACKET) ;
-  //  Serial.print("NUM_PACKET : ") ; Serial.println(NUM_PACKET) ;
-  //  Serial.print("CHANNELS_REST : ") ; Serial.println(CHANNELS_REST) ;
-  //  Serial.print("PIXELS_IN_LAST_PACKET : ") ; Serial.println(PIXELS_IN_LAST_PACKET) ;
-  Serial.print("start_packet : ") ; Serial.println(start_packet) ;
-  Serial.print("start_index : ") ; Serial.println(start_index) ;
-  Serial.print("stop_packet : ") ; Serial.println(stop_packet) ;
-  Serial.print("stop_index : ") ; Serial.println(stop_index) ; Serial.print("\n") ;
 }
 
 void black_strip(void) {
