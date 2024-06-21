@@ -46,13 +46,57 @@ byte ackCount=0;
 
 //________________SETUP______________________
 void setup() {
-  initialisation() ; // initialise the hardware
+  IOinit();
+  stripLed_init();
+  wireless_init();
+  Serial.begin(SERIAL_BAUD);
   state = start_packet ; // initializes the state machine
 //#ifdef DEBUG_CONFIG
 //  print_config() ; // AFFICHE LES INFOS DU MODULES
 //#endif
 }
 //___________________________________________
+
+
+void IOinit(void){
+  //**************** CONFIG DES ENTREES/SORTIES *************
+  pinMode(LED_ONOFF, OUTPUT);
+  pinMode(LED1, OUTPUT);
+  pinMode(LED_RECEPTION, OUTPUT);
+  pinMode(T1, OUTPUT) ;
+  pinMode(T2, OUTPUT ) ;
+  //******************************************************************
+  digitalWrite(LED_ONOFF,HIGH);
+}
+
+void wireless_init(void){
+  //************************ RFM69 INIT ******************************
+  // Hard Reset the RFM module
+  pinMode(RFM69_RST, OUTPUT);
+  digitalWrite(RFM69_RST, HIGH);
+  delay(100);
+  digitalWrite(RFM69_RST, LOW);
+  delay(100);
+
+  radio.initialize(FREQUENCY, NODEID, NETWORKID);
+  if (IS_RFM69HCW) {
+    radio.setHighPower(); // Only for RFM69HCW & HW!
+  }
+  radio.setPowerLevel(31); // power output ranges from 0 (5dBm) to 31 (20dBm)
+  radio.encrypt(ENCRYPTKEY); // set the ENCRYPTKEY
+  radio.promiscuous(true);
+  //*****************************************************************
+}
+
+
+void stripLed_init(){
+#if defined (__AVR_ATtiny85__)
+  if (F_CPU == 16000000) clock_prescale_set(clock_div_1);
+#endif
+  pixels.begin(); 
+  strip2.begin();
+}
+
 
 //______________ LOOP _______________________
 void loop() { 
@@ -78,28 +122,7 @@ void loop() {
    }
 }
 
-void printReception() { 
-static unsigned int  counter = 0;
-static unsigned int print_decimation = 100000;
-if (counter>=print_decimation){
-    Serial.print("Broadcast RSSI: ");Serial.println(broadcast_RSSI);
-    Serial.print("Qualité comm :") ; Serial.print(trameCntOk) ; Serial.println("/10") ;
-    //printDMX(40,50);
-    //Serial.print("Période :") ; Serial.println(package_rcv_delta_t) ;
-    //Serial.print("Débit :") ; Serial.println(debit) ;
-
-    /*Serial.print("Buff packet ID : ") ; 
-    for (int idx=0;idx<PACKET_NBR ;idx++){
-      Serial.print(packetIdBuff[idx]);
-    }
-    Serial.println("") ;*/
-    counter = 0;
-  }
-  else 
-    counter++;
-}
-
-
+//****************WIRELESS FUNCTIONS********************************/
 void listenRadio(void){
   //check if something was received
   bPacketRcv = radio.receiveDone();
@@ -158,23 +181,6 @@ void listenRadio(void){
   } 
 }
 
-void printDMX(uint8_t startAdr, uint8_t stopAdr){
-  Serial.print(startAdr); Serial.print("-"); Serial.print(stopAdr) ;Serial.print(": ");
-  for (uint8_t i = startAdr; i<= stopAdr ; i++){
-    Serial.print(dmxData[i]);Serial.print(" ");
-  }
-  Serial.println();
-}
-
-void printPacket(int packetNbr, int start, int stop){
-  if (packet_id == packetNbr){
-    for (int i = start;i<stop;i++){
-      Serial.print(theData.packet[i]); Serial.print(" ");
-    }
-    Serial.println();
-  }
-}
-
 void sendRFMPacket(void){
   uint8_t radiopacket[61] ;
   radio.send(TRANSMITTERID, (const void*)radiopacket, strlen(radiopacket), false) ; // envoi du paquet de données
@@ -207,117 +213,6 @@ void receiveStruct(void){
   //Blink(LED2,500);
 }
 
-// build DMX frame with packets received
-bool buildDmxFrame(){
-  static uint8_t nxt_packetId_ = 1 ; // next packet expected to rebuild the DMX frame
-  if (bPacketRcv) {
-    int adressOffset = (packet_id-1)*PACKET_SIZE;
-    for (uint8_t i = 1; i<=PACKET_SIZE ;i++ ){
-      if (radio.DATA[i] == 1 ) { // remove zero values
-        dmxData[adressOffset + i] = 0 ;
-      }
-      else {
-        dmxData[adressOffset + i] = radio.DATA[i] ;
-      }
-    }
-  }
-  return true;
-}
-
-void updateDevices(){
-  if (bDMXFrameRcv){
-    //Serial.println("New DMX frame");
-    // strip 1 update
-    for (int i = 0; i < NUMPIXELS  ; i++) { // parcours les éléments du tableau reçu
-      #ifdef RBG
-      // set color for RBG strip LEDs
-      pixels.setPixelColor(i, pixels.Color(dmxData[DECOR_DMX_ADRESS+3*i], dmxData[DECOR_DMX_ADRESS + 3*i + 2], dmxData[DECOR_DMX_ADRESS+ 3*i +1])); // change the color
-      #else if RGB 
-      // set color for RGB strip LEDs
-      pixels.setPixelColor(i, dmxData[DECOR_DMX_ADRESS+3*i], dmxData[DECOR_DMX_ADRESS + 3*i + 1], dmxData[DECOR_DMX_ADRESS+ 3*i +2]); // change the color
-      #endif
-    }
-    
-    // strip2 update
-    for (int i = 0; i < strip2.numPixels(); i++) { // parcours les éléments du tableau reçu
-      #ifdef RBG
-      // set color for RBG strip LEDs
-      strip2.setPixelColor(i, pixels.Color(dmxData[DECOR_DMX_ADRESS+3*i], dmxData[DECOR_DMX_ADRESS + 3*i + 2], dmxData[DECOR_DMX_ADRESS+ 3*i +1])); // change the color
-      #else if RGB
-      // set color for RGB strip LEDs
-      strip2.setPixelColor(i, dmxData[STRIP2_ADDRESS+3*i], dmxData[STRIP2_ADDRESS + 3*i + 1], dmxData[STRIP2_ADDRESS+ 3*i +2]); // change the color
-      #endif
-    }
-  }
-  // update the the strip LED every function calls 
-  pixels.show();
-  strip2.show();
-}
-
-
-void IOinit(void){
-  //**************** CONFIG DES ENTREES/SORTIES *************
-  pinMode(LED_ONOFF, OUTPUT);
-  pinMode(LED1, OUTPUT);
-  pinMode(LED_RECEPTION, OUTPUT);
-  pinMode(T1, OUTPUT) ;
-  pinMode(T2, OUTPUT ) ;
-  //******************************************************************
-}
-
-void wireless_init(void){
-  //************************ RFM69 INIT ******************************
-  // Hard Reset the RFM module
-  pinMode(RFM69_RST, OUTPUT);
-  digitalWrite(RFM69_RST, HIGH);
-  delay(100);
-  digitalWrite(RFM69_RST, LOW);
-  delay(100);
-
-  radio.initialize(FREQUENCY, NODEID, NETWORKID);
-  if (IS_RFM69HCW) {
-    radio.setHighPower(); // Only for RFM69HCW & HW!
-  }
-  radio.setPowerLevel(31); // power output ranges from 0 (5dBm) to 31 (20dBm)
-  radio.encrypt(ENCRYPTKEY); // set the ENCRYPTKEY
-  radio.promiscuous(true);
-  //*****************************************************************
-}
-
-
-void stripLed_init(){
-#if defined (__AVR_ATtiny85__)
-  if (F_CPU == 16000000) clock_prescale_set(clock_div_1);
-#endif
-  pixels.begin(); // This initializes the NeoPixel library.
-  strip2.begin();
-}
-
-void initialisation(void) {
-  IOinit();
-  digitalWrite(LED_ONOFF,HIGH);
-  stripLed_init();
-  wireless_init();
-  Serial.begin(SERIAL_BAUD);
-}
-
-void print_config(void) {
-  Serial.print("Recepteur strip leds ");
-  Serial.println("\nNetwork : ") ;
-  Serial.print("Node: ") ; Serial.println(NODEID) ;
-  Serial.print("NETWORKID: ") ; Serial.println(NETWORKID) ;
-  Serial.print("DECOR_DMX_ADRESS: ") ; Serial.println(DECOR_DMX_ADRESS) ;
-  Serial.println("\nDecor parameters : ") ;
-  Serial.print("NUMPIXELS: ") ; Serial.println(NUMPIXELS) ;
-}
-
-void black_strip(void) {
-  for (int i = 0; i < NUMPIXELS; i++) {
-    pixels.setPixelColor(i, 0, 0, 0);
-    pixels.show(); // on met à jour les pîxels de la bande
-  }
-}
-
 bool _noDataSince() {
   package_rcv_delta_t = millis() - last_reception; 
   debit = 1000/float(package_rcv_delta_t); 
@@ -332,6 +227,39 @@ bool _noDataSince() {
   return true ;
 }
 
+void printReception() { 
+  static unsigned int  counter = 0;
+  static unsigned int print_decimation = 100000;
+  if (counter>=print_decimation){
+      Serial.print("Broadcast RSSI: ");Serial.println(broadcast_RSSI);
+      Serial.print("Qualité comm :") ; Serial.print(trameCntOk) ; Serial.println("/10") ;
+      //printDMX(40,50);
+      //Serial.print("Période :") ; Serial.println(package_rcv_delta_t) ;
+      //Serial.print("Débit :") ; Serial.println(debit) ;
+
+      /*Serial.print("Buff packet ID : ") ; 
+      for (int idx=0;idx<PACKET_NBR ;idx++){
+        Serial.print(packetIdBuff[idx]);
+      }
+      Serial.println("") ;*/
+      counter = 0;
+    }
+    else 
+      counter++;
+}
+
+void printPacket(int packetNbr, int start, int stop){
+  if (packet_id == packetNbr){
+    for (int i = start;i<stop;i++){
+      Serial.print(theData.packet[i]); Serial.print(" ");
+    }
+    Serial.println();
+  }
+}
+/*******************************************************************************/
+
+
+/******* DMX FRAME FUNCTIONS **********/
 void checkCom(){
   static int packetCounter = 0;
   static int trameCnt = 0;
@@ -377,6 +305,80 @@ void checkCom(){
       packetCounter = 0;
 }
 
+// build DMX frame with packets received
+bool buildDmxFrame(){
+  static uint8_t nxt_packetId_ = 1 ; // next packet expected to rebuild the DMX frame
+  if (bPacketRcv) {
+    int adressOffset = (packet_id-1)*PACKET_SIZE;
+    for (uint8_t i = 1; i<=PACKET_SIZE ;i++ ){
+      if (radio.DATA[i] == 1 ) { // remove zero values
+        dmxData[adressOffset + i] = 0 ;
+      }
+      else {
+        dmxData[adressOffset + i] = radio.DATA[i] ;
+      }
+    }
+  }
+  return true;
+}
+
+void printDMX(uint8_t startAdr, uint8_t stopAdr){
+  Serial.print(startAdr); Serial.print("-"); Serial.print(stopAdr) ;Serial.print(": ");
+  for (uint8_t i = startAdr; i<= stopAdr ; i++){
+    Serial.print(dmxData[i]);Serial.print(" ");
+  }
+  Serial.println();
+}
+/*********************************************************/
+
+/****************** STRIP LEDS CONTROL ************************/
+void updateDevices(){
+  if (bDMXFrameRcv){
+    //Serial.println("New DMX frame");
+    // strip 1 update
+    for (int i = 0; i < NUMPIXELS  ; i++) { // parcours les éléments du tableau reçu
+      #ifdef RBG
+      // set color for RBG strip LEDs
+      pixels.setPixelColor(i, pixels.Color(dmxData[DECOR_DMX_ADRESS+3*i], dmxData[DECOR_DMX_ADRESS + 3*i + 2], dmxData[DECOR_DMX_ADRESS+ 3*i +1])); // change the color
+      #else if RGB 
+      // set color for RGB strip LEDs
+      pixels.setPixelColor(i, dmxData[DECOR_DMX_ADRESS+3*i], dmxData[DECOR_DMX_ADRESS + 3*i + 1], dmxData[DECOR_DMX_ADRESS+ 3*i +2]); // change the color
+      #endif
+    }
+    
+    // strip2 update
+    for (int i = 0; i < strip2.numPixels(); i++) { // parcours les éléments du tableau reçu
+      #ifdef RBG
+      // set color for RBG strip LEDs
+      strip2.setPixelColor(i, pixels.Color(dmxData[DECOR_DMX_ADRESS+3*i], dmxData[DECOR_DMX_ADRESS + 3*i + 2], dmxData[DECOR_DMX_ADRESS+ 3*i +1])); // change the color
+      #else if RGB
+      // set color for RGB strip LEDs
+      strip2.setPixelColor(i, dmxData[STRIP2_ADDRESS+3*i], dmxData[STRIP2_ADDRESS + 3*i + 1], dmxData[STRIP2_ADDRESS+ 3*i +2]); // change the color
+      #endif
+    }
+  }
+  // update the the strip LED every function calls 
+  pixels.show();
+  strip2.show();
+}
+
+void print_config(void) {
+  Serial.print("Recepteur strip leds ");
+  Serial.println("\nNetwork : ") ;
+  Serial.print("Node: ") ; Serial.println(NODEID) ;
+  Serial.print("NETWORKID: ") ; Serial.println(NETWORKID) ;
+  Serial.print("DECOR_DMX_ADRESS: ") ; Serial.println(DECOR_DMX_ADRESS) ;
+  Serial.println("\nDecor parameters : ") ;
+  Serial.print("NUMPIXELS: ") ; Serial.println(NUMPIXELS) ;
+}
+
+void black_strip(void) {
+  for (int i = 0; i < NUMPIXELS; i++) {
+    pixels.setPixelColor(i, 0, 0, 0);
+    pixels.show(); // on met à jour les pîxels de la bande
+  }
+}
+
 void remoteManual(void){
  if (bPacketRcv){
    if (diagBuff.diagCode == FULLOFF){
@@ -395,6 +397,57 @@ void remoteManual(void){
    }
  }
 }
+
+
+void stripLEDManual(void){
+  if (Serial.available() > 0)
+  {
+    String input = Serial.readString();
+    input.trim();
+    if (input == "off")
+      black_strip();
+    else if (input == "rouge")
+      fullRed();
+    else if (input == "vert")
+      fullGreen();
+    else if (input == "bleu")
+      fullBlue();   
+  }
+}
+
+void fullRed() {  
+    for(uint16_t i=0; i<pixels.numPixels(); i++) {
+        pixels.setPixelColor(i, pixels.Color(255,0,0));
+    }
+    pixels.show();
+}
+
+void fullGreen() {  
+    for(uint16_t i=0; i<pixels.numPixels(); i++) {
+        pixels.setPixelColor(i, pixels.Color(0,255,0));
+    }
+    pixels.show();
+}
+
+void fullBlue() {  
+    for(uint16_t i=0; i<pixels.numPixels(); i++) {
+        pixels.setPixelColor(i, pixels.Color(0,0,255));
+    }
+    pixels.show();
+}
+
+/*********************************************************/
+
+/*void controlRelay(){
+  if (packet_id == 1){
+    if (radio.DATA[0]>150)
+        digitalWrite(PIN_RELAY, HIGH);
+    else
+        digitalWrite(PIN_RELAY, LOW);    
+  }
+}*/
+
+/******************* UTILITIES *****************/
 
 void Blink(byte PIN, int DELAY_MS)
 {
@@ -423,51 +476,4 @@ void BlinkNoDelay(byte ledPin, int DELAY_MS)
     digitalWrite(ledPin, ledState);
   }
 }
-
-void stripLEDManual(void){
-  if (Serial.available() > 0)
-  {
-    String input = Serial.readString();
-    input.trim();
-    if (input == "off")
-      black_strip();
-    else if (input == "rouge")
-      fullRed();
-    else if (input == "vert")
-      fullGreen();
-    else if (input == "bleu")
-      fullBlue();
-    
-      
-  }
-}
-
-void fullRed() {  
-    for(uint16_t i=0; i<pixels.numPixels(); i++) {
-        pixels.setPixelColor(i, pixels.Color(255,0,0));
-    }
-    pixels.show();
-}
-
-void fullGreen() {  
-    for(uint16_t i=0; i<pixels.numPixels(); i++) {
-        pixels.setPixelColor(i, pixels.Color(0,255,0));
-    }
-    pixels.show();
-}
-
-void fullBlue() {  
-    for(uint16_t i=0; i<pixels.numPixels(); i++) {
-        pixels.setPixelColor(i, pixels.Color(0,0,255));
-    }
-    pixels.show();
-}
-
-/*void controlRelay(){
-  if (packet_id == 1){
-    if (radio.DATA[0]>150)
-        digitalWrite(PIN_RELAY, HIGH);
-    else
-        digitalWrite(PIN_RELAY, LOW);    
-  }
-}*/
+/****************************************/
