@@ -125,6 +125,7 @@ void sendManualTram(){
       }
       else if (input == "rouge"){
         fullRed(manData);
+        //stripRed(manData,1,3);
         Serial.println(input);
       }
       else if (input == "vert"){
@@ -151,7 +152,7 @@ void sendManualTram(){
     sendPackets(manData);
   }
   if (bWipe) {
-    colorWipeRGB(manData, 151, 31, 20);
+    colorWipeRGB(manData, 1, 46, 20);
     //colorWipe(manData, 0, 0, 255, 151, 31, 20);
     sendPackets(manData);
   }
