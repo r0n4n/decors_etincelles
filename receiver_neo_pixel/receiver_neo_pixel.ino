@@ -282,7 +282,6 @@ bool buildDmxFrame(){
   static uint8_t nxt_packetId_ = 1 ; // next packet expected to rebuild the DMX frame
   if (bPacketRcv) {
     int adressOffset = (packet_id-1)*PACKET_SIZE;
-    bDMXFrameRdy = false;
     for (uint8_t i = 1; i<=PACKET_SIZE ;i++ ){
       if (radio.DATA[i] == 1 ) { // remove zero values
         dmxData[adressOffset + i] = 0 ;
@@ -292,20 +291,13 @@ bool buildDmxFrame(){
       }
     }
   }
-  
- /* if (packet_id == PACKET_NBR && bDMXFrameOk){
-    return true;
-    bDMXFrameRdy = true;
-  }
-  else 
-    return false;
-  }*/
   return true;
-  //Serial.print("Value: ");Serial.println(dmxData[58]);
 }
 
 void updateDevices(){
-  //if (bDMXFrameRdy){
+  if (bDMXFrameRcv){
+    //Serial.println("New DMX frame");
+    // strip 1 update
     for (int i = 0; i < NUMPIXELS  ; i++) { // parcours les éléments du tableau reçu
       #ifdef RBG
       // set color for RBG strip LEDs
@@ -326,9 +318,10 @@ void updateDevices(){
       strip2.setPixelColor(i, dmxData[STRIP2_ADDRESS+3*i], dmxData[STRIP2_ADDRESS + 3*i + 1], dmxData[STRIP2_ADDRESS+ 3*i +2]); // change the color
       #endif
     }
-    pixels.show();
-    strip2.show();
-  //}
+  }
+  // update the the strip LED every function calls 
+  pixels.show();
+  strip2.show();
 }
 
 // _________________________________________________________________________
@@ -501,7 +494,8 @@ void checkCom(){
   static int trameCntOkTmp = 0;
   static bool paquet_perdu = false; // True si un paquet n'a pas été reçu, false sinon
   #define TRAMESNBRMAX 10
-  
+  bDMXFrameRcv = false;
+
   if (trameCnt>=TRAMESNBRMAX){
     trameCntOk = trameCntOkTmp;
     trameCntOkTmp = 0;
@@ -509,7 +503,7 @@ void checkCom(){
     
   }
 
-  if (first_iter == false){ 
+  //if (first_iter == false){ 
     if (packet_id <last_packet_id){ // une nouvelle trame arrive
       paquet_perdu = false;
       trameCnt++;
@@ -518,19 +512,17 @@ void checkCom(){
       
     if (paquet_perdu ==false && packet_id>1 && packet_id<=PACKET_NBR && last_packet_id!=(packet_id-1)){ // si un paquet est perdu
       paquet_perdu = true;
+      //Serial.println("paquet perdu");
     }
 
     if (packet_id==PACKET_NBR){ // si à la fin de la trame aucun paquet n'a été perdu 
-      if (paquet_perdu){
-        bDMXFrameOk = false;
-      }
-      else{
+      if (!paquet_perdu){
         trameCntOkTmp++;
-        bDMXFrameOk = true;
+        bDMXFrameRcv = true;
       } 
     }
 
-  }
+  //}
   last_packet_id = packet_id;
 
   if (packetCounter<10){

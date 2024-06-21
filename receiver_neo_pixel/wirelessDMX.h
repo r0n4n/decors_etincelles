@@ -7,7 +7,7 @@
 #define NETWORKID 100 //the same on all nodes that talk to each other
 #define TRANSMITTERID 1 // L'adresse réseau de l'émetteur
 #define BROADCASTID 2 // L'adresse où le DMX est broadcasté 
-#define NODEID 12 // L'adresse réseau du récepteur 
+#define NODEID 11 // L'adresse réseau du récepteur 
 #define TESTEURID 4 // L'adresse réseau du testeur réseau 
 //***********************************************************************
 
@@ -51,8 +51,7 @@ int state ; // L'id du paquet qui est attendu
 int packet_id ; // L'id du paquet qui vient d'être reçu
 int last_packet_id ; // ID du dernier paquet reçu 
 int trameCntOk = 0;
-bool bDMXFrameOk = false;
-bool bDMXFrameRdy = false;
+bool bDMXFrameRcv = false;
 int nbr_paquet_perdu = 0; // compteur du nombre de paquets perdu 
 int start_index = 0  ; // premier indice dans le premier paquet que le récepteur doit interpréter
 int stop_index = 0 ; // dernier indice dans le dernier paquet que le récepteur doit interpréter
