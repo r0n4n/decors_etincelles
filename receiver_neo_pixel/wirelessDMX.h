@@ -7,7 +7,7 @@
 #define NETWORKID 100 //the same on all nodes that talk to each other
 #define TRANSMITTERID 1 // L'adresse réseau de l'émetteur
 #define BROADCASTID 2 // L'adresse où le DMX est broadcasté 
-#define NODEID 11 // L'adresse réseau du récepteur 
+#define NODEID 13 // L'adresse réseau du récepteur 
 #define TESTEURID 4 // L'adresse réseau du testeur réseau 
 //***********************************************************************
 
@@ -87,9 +87,15 @@ DiagBuff diagBuff;
 /**********************************************/
 
 /************** OBJECTS ***********************/
-Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN_STRIP1 , NEO_BRG + NEO_KHZ800); 
-Adafruit_NeoPixel strip2 = Adafruit_NeoPixel(STRIP2_LEDS_NBR, PIN_STRIP2, NEO_BRG + NEO_KHZ800); 
-Adafruit_NeoPixel strip3 = Adafruit_NeoPixel(STRIP3_LEDS_NBR, PIN_STRIP3, NEO_BRG + NEO_KHZ800); 
+#if (STRIP_CONFIG == STRIP_QUAD)
+  Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN_STRIP1 , NEO_BRG + NEO_KHZ800); // on configure la première bande avec toutes les LEDs pour assurer la retro-compatibilité
+  //Adafruit_NeoPixel strip2 = Adafruit_NeoPixel(STRIP2_LEDS_NBR, PIN_STRIP2, NEO_BRG + NEO_KHZ800); 
+  Adafruit_NeoPixel strip3 = Adafruit_NeoPixel(STRIP3_LEDS_NBR + STRIP4_LEDS_NBR , PIN_STRIP3, NEO_BRG + NEO_KHZ800); // on configure la première bande avec toutes les LEDs pour assurer la retro-compatibilité
+  Adafruit_NeoPixel strip4 = Adafruit_NeoPixel(STRIP4_LEDS_NBR, PIN_STRIP4, NEO_BRG + NEO_KHZ800); 
+#else
+  Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN_STRIP1 , NEO_BRG + NEO_KHZ800); // on configure la première bande avec toutes les LEDs pour assurer la retro-compatibilité
+  Adafruit_NeoPixel strip2 = Adafruit_NeoPixel(STRIP2_LEDS_NBR, PIN_STRIP2, NEO_BRG + NEO_KHZ800); 
+#endif
 
 RFM69 radio = RFM69(RFM69_CS, RFM69_IRQ, IS_RFM69HCW, RFM69_IRQN); // Création de l'objet radio qui gère le module RFM69
 /***********************************************/

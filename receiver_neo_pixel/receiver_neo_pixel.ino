@@ -47,9 +47,9 @@ byte ackCount=0;
 //________________SETUP______________________
 void setup() {
   IOinit();
+  Serial.begin(SERIAL_BAUD);
   stripLed_init();
   wireless_init();
-  Serial.begin(SERIAL_BAUD);
   state = start_packet ; // initializes the state machine
 //#ifdef DEBUG_CONFIG
 //  print_config() ; // AFFICHE LES INFOS DU MODULES
@@ -63,7 +63,7 @@ void IOinit(void){
   pinMode(LED_ONOFF, OUTPUT);
   pinMode(LED1, OUTPUT);
   pinMode(LED_RECEPTION, OUTPUT);
-  pinMode(T1, OUTPUT) ;
+  //  pinMode(T1, OUTPUT) ;
   //pinMode(T2, OUTPUT ) ;
   //******************************************************************
   digitalWrite(LED_ONOFF,HIGH);
@@ -93,8 +93,17 @@ void stripLed_init(){
 #if defined (__AVR_ATtiny85__)
   if (F_CPU == 16000000) clock_prescale_set(clock_div_1);
 #endif
+  
+#if (STRIP_CONFIG == STRIP_QUAD)
+  pixels.begin(); 
+  //strip2.begin();
+  strip3.begin();
+  strip4.begin();
+#else
   pixels.begin(); 
   strip2.begin();
+
+#endif
 }
 
 
@@ -336,6 +345,7 @@ void updateDevices(){
   if (bDMXFrameRcv){
     //Serial.println("New DMX frame");
     #if (STRIP_CONFIG == STRIP_SINGLE)
+    //Serial.println("String single");
     // strip 1 update
     for (int i = 0; i < NUMPIXELS  ; i++) { // parcours les éléments du tableau reçu
       #ifdef RBG
@@ -348,12 +358,13 @@ void updateDevices(){
     }
     
 
-    #else if (STRIP_CONFIG == STRIP_DOUBLE)
+    #elif (STRIP_CONFIG == STRIP_DOUBLE)
+    //Serial.println("String double");
     // strip 1 update
     for (int i = 0; i < NUMPIXELS  ; i++) { // parcours les éléments du tableau reçu
       #ifdef RBG
       // set color for RBG strip LEDs
-      pixels.setPixelColor(i, pixels.Color(dmxData[DECOR_DMX_ADRESS+3*i], dmxData[DECOR_DMX_ADRESS + 3*i + 2], dmxData[DECOR_DMX_ADRESS+ 3*i +1])); // change the color
+      pixels.setPixelColor(i, dmxData[DECOR_DMX_ADRESS+3*i], dmxData[DECOR_DMX_ADRESS + 3*i + 2], dmxData[DECOR_DMX_ADRESS+ 3*i +1]); // change the color
       #else if RGB 
       // set color for RGB strip LEDs
       pixels.setPixelColor(i, dmxData[DECOR_DMX_ADRESS+3*i], dmxData[DECOR_DMX_ADRESS + 3*i + 1], dmxData[DECOR_DMX_ADRESS+ 3*i +2]); // change the color
@@ -364,17 +375,72 @@ void updateDevices(){
     for (int i = 0; i < strip2.numPixels(); i++) { // parcours les éléments du tableau reçu
       #ifdef RBG
       // set color for RBG strip LEDs
-      strip2.setPixelColor(i, pixels.Color(dmxData[DECOR_DMX_ADRESS+3*i], dmxData[DECOR_DMX_ADRESS + 3*i + 2], dmxData[DECOR_DMX_ADRESS+ 3*i +1])); // change the color
+      strip2.setPixelColor(i, dmxData[STRIP2_ADDRESS+3*i], dmxData[STRIP2_ADDRESS + 3*i + 2], dmxData[STRIP2_ADDRESS+ 3*i +1]); // change the color
       #else if RGB
       // set color for RGB strip LEDs
       strip2.setPixelColor(i, dmxData[STRIP2_ADDRESS+3*i], dmxData[STRIP2_ADDRESS + 3*i + 1], dmxData[STRIP2_ADDRESS+ 3*i +2]); // change the color
       #endif
     }
+    
+    #elif (STRIP_CONFIG == STRIP_QUAD)
+    //Serial.println("String quad");
+    // strip 1 update
+    for (int i = 0; i < NUMPIXELS  ; i++) { // parcours les éléments du tableau reçu
+      #ifdef RBG
+      // set color for RBG strip LEDs
+      pixels.setPixelColor(i, dmxData[DECOR_DMX_ADRESS+3*i], dmxData[DECOR_DMX_ADRESS + 3*i + 2], dmxData[DECOR_DMX_ADRESS+ 3*i +1]); // change the color
+      #else if RGB 
+      // set color for RGB strip LEDs
+      pixels.setPixelColor(i, dmxData[DECOR_DMX_ADRESS+3*i], dmxData[DECOR_DMX_ADRESS + 3*i + 1], dmxData[DECOR_DMX_ADRESS+ 3*i +2]); // change the color
+      #endif
+    }
+    /*
+    // strip2 update
+    for (int i = 0; i < strip2.numPixels(); i++) { // parcours les éléments du tableau reçu
+      #ifdef RBG
+      // set color for RBG strip LEDs
+      strip2.setPixelColor(i, dmxData[STRIP2_ADDRESS+3*i], dmxData[STRIP2_ADDRESS + 3*i + 2], dmxData[STRIP2_ADDRESS+ 3*i +1]); // change the color
+      #else if RGB
+      // set color for RGB strip LEDs
+      strip2.setPixelColor(i, dmxData[STRIP2_ADDRESS+3*i], dmxData[STRIP2_ADDRESS + 3*i + 1], dmxData[STRIP2_ADDRESS+ 3*i +2]); // change the color
+      #endif
+    }*/
+
+    // strip 3 update
+    for (int i = 0; i < strip3.numPixels()  ; i++) { // parcours les éléments du tableau reçu
+      #ifdef RBG
+      // set color for RBG strip LEDs
+      strip3.setPixelColor(i, dmxData[STRIP3_ADDRESS+3*i], dmxData[STRIP3_ADDRESS + 3*i + 2], dmxData[STRIP3_ADDRESS + 3*i +1]); // change the color
+      #else if RGB 
+      // set color for RGB strip LEDs
+      strip3.setPixelColor(i, dmxData[STRIP3_ADDRESS+3*i], dmxData[STRIP3_ADDRESS + 3*i + 1], dmxData[STRIP3_ADDRESS + 3*i +2]); // change the color
+      #endif
+    }
+    
+    // strip 4 update
+    for (int i = 0; i < strip4.numPixels(); i++) { // parcours les éléments du tableau reçu
+      #ifdef RBG
+      // set color for RBG strip LEDs
+      strip4.setPixelColor(i, dmxData[STRIP4_ADDRESS+3*i], dmxData[STRIP4_ADDRESS + 3*i + 2], dmxData[STRIP4_ADDRESS+ 3*i +1]); // change the color
+      #else if RGB
+      // set color for RGB strip LEDs
+      strip4.setPixelColor(i, dmxData[STRIP4_ADDRESS+3*i], dmxData[STRIP4_ADDRESS + 3*i + 1], dmxData[STRIP4_ADDRESS+ 3*i +2]); // change the color
+      #endif
+    }
     #endif
   }
+  
   // update the the strip LED every function calls 
-  pixels.show();
-  strip2.show();
+  #if (STRIP_CONFIG == STRIP_QUAD)
+    pixels.show();
+    //strip2.show();
+    strip3.show();
+    strip4.show();
+  #else
+    //Serial.println("show else");
+    pixels.show();
+    strip2.show();
+  #endif
 }
 
 void print_config(void) {
