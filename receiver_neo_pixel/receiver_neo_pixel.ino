@@ -40,6 +40,16 @@ unsigned long previousMillis = 0;  // will store last time LED was updated
 int ledState = LOW;  // ledState used to set the LED
 byte ackCount=0;
 
+#if (STRIP_CONFIG == STRIP_QUAD)
+  Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN_STRIP1 , NEO_BRG + NEO_KHZ800); // on configure la première bande avec toutes les LEDs pour assurer la retro-compatibilité
+  //Adafruit_NeoPixel strip2 = Adafruit_NeoPixel(STRIP2_LEDS_NBR, PIN_STRIP2, NEO_BRG + NEO_KHZ800); 
+  Adafruit_NeoPixel strip3 = Adafruit_NeoPixel(STRIP3_LEDS_NBR + STRIP4_LEDS_NBR , PIN_STRIP3, NEO_BRG + NEO_KHZ800); // on configure la première bande avec toutes les LEDs pour assurer la retro-compatibilité
+  Adafruit_NeoPixel strip4 = Adafruit_NeoPixel(STRIP4_LEDS_NBR, PIN_STRIP4, NEO_BRG + NEO_KHZ800); 
+#else
+  Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN_STRIP1 , NEO_BRG + NEO_KHZ800); // on configure la première bande avec toutes les LEDs pour assurer la retro-compatibilité
+  Adafruit_NeoPixel strip2 = Adafruit_NeoPixel(STRIP2_LEDS_NBR, PIN_STRIP2, NEO_BRG + NEO_KHZ800); 
+#endif
+
 
 
 #define SERIAL_BAUD 115200
