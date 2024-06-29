@@ -89,6 +89,7 @@ DiagBuff diagBuff;
 /************** OBJECTS ***********************/
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN_STRIP1 , NEO_BRG + NEO_KHZ800); 
 Adafruit_NeoPixel strip2 = Adafruit_NeoPixel(STRIP2_LEDS_NBR, PIN_STRIP2, NEO_BRG + NEO_KHZ800); 
+Adafruit_NeoPixel strip3 = Adafruit_NeoPixel(STRIP3_LEDS_NBR, PIN_STRIP3, NEO_BRG + NEO_KHZ800); 
 
 RFM69 radio = RFM69(RFM69_CS, RFM69_IRQ, IS_RFM69HCW, RFM69_IRQN); // Création de l'objet radio qui gère le module RFM69
 /***********************************************/

@@ -64,7 +64,7 @@ void IOinit(void){
   pinMode(LED1, OUTPUT);
   pinMode(LED_RECEPTION, OUTPUT);
   pinMode(T1, OUTPUT) ;
-  pinMode(T2, OUTPUT ) ;
+  //pinMode(T2, OUTPUT ) ;
   //******************************************************************
   digitalWrite(LED_ONOFF,HIGH);
 }
@@ -335,6 +335,20 @@ void printDMX(uint8_t startAdr, uint8_t stopAdr){
 void updateDevices(){
   if (bDMXFrameRcv){
     //Serial.println("New DMX frame");
+    #if (STRIP_CONFIG == STRIP_SINGLE)
+    // strip 1 update
+    for (int i = 0; i < NUMPIXELS  ; i++) { // parcours les éléments du tableau reçu
+      #ifdef RBG
+      // set color for RBG strip LEDs
+      pixels.setPixelColor(i, pixels.Color(dmxData[DECOR_DMX_ADRESS+3*i], dmxData[DECOR_DMX_ADRESS + 3*i + 2], dmxData[DECOR_DMX_ADRESS+ 3*i +1])); // change the color
+      #else if RGB 
+      // set color for RGB strip LEDs
+      pixels.setPixelColor(i, dmxData[DECOR_DMX_ADRESS+3*i], dmxData[DECOR_DMX_ADRESS + 3*i + 1], dmxData[DECOR_DMX_ADRESS+ 3*i +2]); // change the color
+      #endif
+    }
+    
+
+    #else if (STRIP_CONFIG == STRIP_DOUBLE)
     // strip 1 update
     for (int i = 0; i < NUMPIXELS  ; i++) { // parcours les éléments du tableau reçu
       #ifdef RBG
@@ -356,6 +370,7 @@ void updateDevices(){
       strip2.setPixelColor(i, dmxData[STRIP2_ADDRESS+3*i], dmxData[STRIP2_ADDRESS + 3*i + 1], dmxData[STRIP2_ADDRESS+ 3*i +2]); // change the color
       #endif
     }
+    #endif
   }
   // update the the strip LED every function calls 
   pixels.show();
