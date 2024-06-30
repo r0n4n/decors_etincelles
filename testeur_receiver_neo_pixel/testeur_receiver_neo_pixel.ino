@@ -12,6 +12,7 @@
 #include "parameters.h"
 #include "hardware.h"
 #include "wirelessDMX.h"
+#include "DmxEffects.h"
 /*********************************************************************************************/
 
 int mode = 1 ; // 1=receiver ; 2= transmitter; 3 =receiverStruct ; 4=stripLed 
@@ -24,6 +25,9 @@ unsigned long previousMillis = 0;  // will store last time LED was updated
 // Variables will change:
 int ledState = LOW;  // ledState used to set the LED
 byte ackCount=0;
+
+#define DMXSERIAL_MAX 512 // max. number of supported DMX data channels
+uint8_t  manData[DMXSERIAL_MAX];
 
 #if (STRIP_CONFIG == STRIP_QUAD)
   Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN_STRIP1 , NEO_BRG + NEO_KHZ800); // on configure la première bande avec toutes les LEDs pour assurer la retro-compatibilité
@@ -104,15 +108,16 @@ void stripLed_init(){
 
 //______________ LOOP _______________________
 void loop() { 
-  listenRadio();
-  testseq() ; 
+  //listenRadio();
+  //testseq() ; 
+  remoteTestSeq();
   switch (mode){
     case 1: 
       //printPacket(1,0,10);
-      buildDmxFrame();
+      //buildDmxFrame();
       //printDMX(1,65);
       //printReception();
-      updateDevices();
+      //updateDevices();
       break;
     case 4:
       stripLEDManual();
@@ -254,6 +259,49 @@ void printPacket(int packetNbr, int start, int stop){
     Serial.println();
   }
 }
+
+void sendPackets(uint8_t  *trame){
+  uint8_t radiopacket[PACKET_SIZE_PLUS_ID] ;
+
+  for (int i = 1 ; i <=PACKET_NBR ; i++){
+      build_packet(i, trame, radiopacket); // construction et envoi du paquet i
+      #ifndef RadioHead
+        radio.send(BROADCASTID, (const void*)radiopacket, strlen(radiopacket), false) ; // envoi du paquet de donnÃ©es
+      #else
+      if (!rf69_manager.sendto((uint8_t *)radiopacket, strlen(radiopacket), BROADCASTID)){
+        Serial.println("Sending failed (no ack)");
+      }
+      #endif
+      delay(2);
+    }
+}
+
+/*
+ * Construit un paquet de plusieurs canaux DMX selon le packet_id donnÃ©es en paramÃ¨tre.
+ * @param int packet_id : l'identifiant du paquet Ã  envoyer
+ * @return None.
+ */
+void build_packet(int packet_id, uint8_t  *trame , uint8_t  *packet ) {
+  packet[0] = packet_id ; // L'identifiant du paquet est le premier byte du paquet Ã  envoyer
+  int channel_offset = (packet_id - 1) * PACKET_SIZE ; // calcul de l'offset du canal DMX selon le packet_id
+
+  for (int i = 1 ; i < (PACKET_SIZE + 1) ; i++) { // construction du paquet Ã  envoyer avec les canaux DMX
+    packet[i] = trame[i + channel_offset] ;
+    delete_zeros(packet, i) ;
+  }
+}
+
+/*
+ * delete_zeros regarde si la valeur du canal donnÃ©e en paramÃ¨tre est nulle. Si oui elle la chnage en 1. Cette function est utilisÃ©e pour permettre l'envoi des donnÃ©es via
+ * le module RFM69. Le module ne prends pas les valeurs nulles.
+ * @param int i : le canal concernÃ©
+ * @return None.
+ */
+void delete_zeros(uint8_t *packet, int i){
+   if (packet[i] == 0 )
+      packet[i] = 1 ; // rejet des zeros sur les canaux DMX pour Ã©viter les erreurs de transmission sur la liason RFM69
+}
+
 /*******************************************************************************/
 
 
@@ -577,13 +625,51 @@ void testseq(void){
     default:
       break;
   }
+}
 
+void remoteTestSeq(){
+  static int step = 2; 
+  int step_nbr = 5;
+  int main_delay = 800; // ms
+  int wipe_delay = 50; // ms
+  static int _delay = main_delay; // ms
+  static unsigned long   _last_date = 0;
+  unsigned long date = millis();
+  unsigned long  _timer = date - _last_date ; 
   
- /* delay(_delay);
-  fullGreen() ;
-  delay(_delay);
-  fullBlue() ; 
-  delay(_delay);*/
+  
+  if (_timer>_delay){
+    _last_date = date;
+    step++;
+    if (step>step_nbr){
+      step = 1;
+    }
+  }
+
+
+  switch (step){
+    case 1:
+      fulloff(manData);
+      break;
+    case 2:
+      //colorWipe(pixels.Color(100, 100, 100), wipe_delay);
+      step++;
+      break;
+    case 3:
+      fullRed(manData);
+      break;
+    case 4:
+      fullGreen(manData);
+      break;
+    case 5:
+      fullBlue(manData);
+      break;
+    default:
+      break;
+  }
+  
+  sendPackets(manData);
+  delay(10);
 }
 
 /*********************************************************/
