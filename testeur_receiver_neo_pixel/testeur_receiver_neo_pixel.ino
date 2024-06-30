@@ -109,7 +109,7 @@ void stripLed_init(){
 //______________ LOOP _______________________
 void loop() { 
   //listenRadio();
-  //testseq() ; 
+  testseq() ; 
   remoteTestSeq();
   switch (mode){
     case 1: 
