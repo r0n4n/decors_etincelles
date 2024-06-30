@@ -637,10 +637,18 @@ void remoteTestSeq(){
   unsigned long date = millis();
   unsigned long  _timer = date - _last_date ; 
   
+  if (step == 2){ // leave time to run the color wipe 
+    _delay = pixels.numPixels()*(wipe_delay + 100);
+  }
+  else {
+    _delay = main_delay;
+  }
   
   if (_timer>_delay){
     _last_date = date;
-    step++;
+    if (step != 2){
+      step++;
+    }
     if (step>step_nbr){
       step = 1;
     }
@@ -652,8 +660,10 @@ void remoteTestSeq(){
       fulloff(manData);
       break;
     case 2:
-      //colorWipe(pixels.Color(100, 100, 100), wipe_delay);
-      step++;
+      if (colorWipe(manData,50,50,50, 1, 46, wipe_delay)){
+        step++;
+        _last_date = date;
+      }
       break;
     case 3:
       fullRed(manData);
