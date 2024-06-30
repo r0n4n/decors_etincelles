@@ -65,6 +65,9 @@
   #define STRIP2_ADDRESS DECOR_DMX_ADRESS + 3*STRIP1_LEDS_NBR
 #endif 
 
+#define STRIP_ONOFF_LED 7
+#define ONOFF_LED_BRIGHTNESS 1
+
 //#define RBG
 #define RGB
 

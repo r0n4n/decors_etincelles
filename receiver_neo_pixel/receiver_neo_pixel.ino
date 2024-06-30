@@ -50,7 +50,7 @@ byte ackCount=0;
   Adafruit_NeoPixel strip2 = Adafruit_NeoPixel(STRIP2_LEDS_NBR, PIN_STRIP2, NEO_BRG + NEO_KHZ800); 
 #endif
 
-
+//#define STRIP_ON_OFF_INDIC 
 
 #define SERIAL_BAUD 115200
 
@@ -439,6 +439,12 @@ void updateDevices(){
     }
     #endif
   }
+  #ifdef STRIP_ON_OFF_INDIC
+  // turn on/off the LED on indicator
+  if (pixels.getPixelColor(STRIP_ONOFF_LED)==0){
+    pixels.setPixelColor(STRIP_ONOFF_LED, ONOFF_LED_BRIGHTNESS, 0, 0); // change the color
+  }
+  #endif
   
   // update the the strip LED every function calls 
   #if (STRIP_CONFIG == STRIP_QUAD)
