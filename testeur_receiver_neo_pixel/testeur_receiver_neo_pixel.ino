@@ -629,13 +629,14 @@ void testseq(void){
 
 void remoteTestSeq(){
   static int step = 2; 
-  int step_nbr = 5;
+  int step_nbr = 7;
   int main_delay = 800; // ms
-  int wipe_delay = 50; // ms
+  int wipe_delay = 2; // ms
   static int _delay = main_delay; // ms
   static unsigned long   _last_date = 0;
   unsigned long date = millis();
   unsigned long  _timer = date - _last_date ; 
+  uint8_t brightness = 25 ; 
   
   if (step == 2){ // leave time to run the color wipe 
     _delay = pixels.numPixels()*(wipe_delay + 100);
@@ -660,26 +661,33 @@ void remoteTestSeq(){
       fulloff(manData);
       break;
     case 2:
-      if (colorWipe(manData,50,50,50, 1, 46, wipe_delay)){
+      step++; // to skip step 2
+      /*if (colorWipe(manData,50,50,50, 1, 46, wipe_delay)){
         step++;
         _last_date = date;
-      }
+      }*/
       break;
     case 3:
-      fullRed(manData);
+      stripWhite(manData, 1, 27, brightness);
       break;
     case 4:
-      fullGreen(manData);
+      stripWhite(manData, 27*3+18, 19, brightness);
       break;
     case 5:
-      fullBlue(manData);
+      stripRed(manData, 1, DMXSERIAL_MAX/3, brightness);
+      break;
+    case 6:
+      stripGreen(manData, 1, DMXSERIAL_MAX/3, brightness);
+      break;
+    case 7:
+      stripBlue(manData, 1, DMXSERIAL_MAX/3, brightness);
       break;
     default:
       break;
   }
   
   sendPackets(manData);
-  delay(10);
+  //delay(5);
 }
 
 /*********************************************************/
