@@ -13,6 +13,7 @@
 #define CH3_ 9
 
 bool decor_cmd = false ; 
+#define TRIG_PULSE_US 1800
 
 #define SERIAL_BAUD 115200
 
@@ -102,32 +103,35 @@ void decor_ctrl(void){
   //bool bRE = risingEdge(DECOR_IN_PIN);
   //toggle(bRE);
   //toggle(commandDetection(DECOR_IN_PIN)); 
-  decor_cmd = digitalRead(DECOR_IN_PIN);
+  //decor_cmd = digitalRead(DECOR_IN_PIN);
+  static unsigned long last_decor_in_pulse ;
+  unsigned long decor_in_pulse = pulseIn(DECOR_IN_PIN,HIGH);
+  
+  
+  //decor_cmd = (decor_in_pulse>TRIG_PULSE_US);
+  bool trig_cmd= risingEdge((last_decor_in_pulse>TRIG_PULSE_US), (decor_in_pulse>TRIG_PULSE_US)) ; 
+  last_decor_in_pulse = decor_in_pulse;
+
+  if (trig_cmd){
+    //Serial.println(decor_in_pulse);
+    ws2812fx.start();
+  }
+  toggle(trig_cmd);
+
   if (decor_cmd){
     digitalWrite(CMD_PIN,HIGH);
     digitalWrite(LED_BUILTIN,HIGH);
-    //ws2812fx.start();
+    
   }
   else{
     digitalWrite(CMD_PIN,LOW);
     digitalWrite(LED_BUILTIN,LOW);
-    //ws2812fx.stop();
+    ws2812fx.stop();
   }
 }
 
-bool risingEdge(int pin){
-  static bool lastState = false;
-  bool state;
-  bool input = digitalRead(DECOR_IN_PIN);
-  if (input && lastState == false){
-    state = true;
-  }
-  else {
-    state = false;
-  }
-  lastState = input;
-  return state;
-
+bool risingEdge(bool prev, bool new_){
+  return (!prev && new_);
 }
 
 void toggle(bool input){
@@ -136,7 +140,6 @@ void toggle(bool input){
     state = !state;
   } 
   decor_cmd = state;
-
 }
 
 bool commandDetection(int pin){
