@@ -1,16 +1,18 @@
 #include "PPMEncoder.h"
+#include <WS2812FX.h>
 
-
+// IO DEFINITION
 #define PPM_OUT_PIN 10
-#define CMD_PIN 5
-#define INPUT_PIN 6
+#define CMD_PIN 12
+#define DECOR_IN_PIN 6
+#define LED_PIN 11
 
 // RC channels pins 
 #define ST_CH 7 // CH1
 #define TH_CH 8 // CH2
 #define CH3_ 9
 
-bool cmd = false ;
+bool decor_cmd = false ; 
 
 // RC data struct
 struct rc {
@@ -21,11 +23,14 @@ struct rc {
 
 rc g2tb ;
 
+// Strip LEDS
+#define LED_COUNT 3
+WS2812FX ws2812fx = WS2812FX(LED_COUNT, LED_PIN, NEO_RGB + NEO_KHZ800);
 
 void setup() {
     initRC();
     pinMode(CMD_PIN, OUTPUT);
-    pinMode(INPUT_PIN, INPUT);
+    pinMode(DECOR_IN_PIN, INPUT);
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN,LOW);
     
@@ -38,6 +43,13 @@ void setup() {
     ppmEncoder.setChannel(4, 1500);
     ppmEncoder.setChannel(5, 1500);
 
+    // Strip LEDs init
+    ws2812fx.init();
+    ws2812fx.setBrightness(150);
+    ws2812fx.setSpeed(9000);
+    ws2812fx.setMode(FX_MODE_RAINBOW);
+    ws2812fx.start();
+
 }
 
 void initRC(void){
@@ -47,24 +59,12 @@ void initRC(void){
 }
 
 void loop() {
-  readRC();
-  ppmEncoder.setChannel(3, g2tb.ST);
-  ppmEncoder.setChannel(2, g2tb.TH);
-  ppmEncoder.setChannel(4, g2tb.CH3);
-  
-  //bool bRE = risingEdge(INPUT_PIN);
-  //toggle(bRE);
-  toggle(commandDetection(INPUT_PIN)); 
-  //cmd = digitalRead(INPUT_PIN);
-  if (cmd){
-    digitalWrite(CMD_PIN,HIGH);
-  }
-  else{
-    digitalWrite(CMD_PIN,LOW);
-  }
-
+  RcToPPM();
+  decor_ctrl();
 }
 
+
+// RC TO PPM CONVERSION
 unsigned long readRcChannel(int pin){
     return pulseIn(pin, HIGH);
 }
@@ -75,11 +75,40 @@ void readRC(void){
   g2tb.CH3 = readRcChannel(CH3_);
 }
 
+void RcToPPM(void){
+  // PPM conversion
+  readRC();
+  ppmEncoder.setChannel(3, g2tb.ST);
+  ppmEncoder.setChannel(2, g2tb.TH);
+  ppmEncoder.setChannel(4, g2tb.CH3);
+}
+
+
+void decor_ctrl(void){
+  // Strip LEDs control
+  ws2812fx.service();
+  
+  
+  //bool bRE = risingEdge(DECOR_IN_PIN);
+  //toggle(bRE);
+  //toggle(commandDetection(DECOR_IN_PIN)); 
+  decor_cmd = digitalRead(DECOR_IN_PIN);
+  if (decor_cmd){
+    digitalWrite(CMD_PIN,HIGH);
+    digitalWrite(LED_BUILTIN,HIGH);
+    //ws2812fx.start();
+  }
+  else{
+    digitalWrite(CMD_PIN,LOW);
+    digitalWrite(LED_BUILTIN,LOW);
+    //ws2812fx.stop();
+  }
+}
 
 bool risingEdge(int pin){
   static bool lastState = false;
   bool state;
-  bool input = digitalRead(INPUT_PIN);
+  bool input = digitalRead(DECOR_IN_PIN);
   if (input && lastState == false){
     state = true;
   }
@@ -96,7 +125,7 @@ void toggle(bool input){
   if (input){
     state = !state;
   } 
-  cmd = state;
+  decor_cmd = state;
 
 }
 
