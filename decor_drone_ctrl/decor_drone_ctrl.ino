@@ -106,7 +106,7 @@ void decor_ctrl(void){
   //toggle(commandDetection(DECOR_IN_PIN)); 
   //decor_cmd = digitalRead(DECOR_IN_PIN);
   unsigned long decor_in_pulse = pulseIn(DECOR_IN_PIN,HIGH);
-  bool request = (decor_in_pulse>TRIG_PULSE_US);
+  bool request = (decor_in_pulse>TRIG_PULSE_US) && (decor_in_pulse <TRIG_MAX_PULSE_US);
   static bool last_request = false;
   
   //decor_cmd = (decor_in_pulse>TRIG_PULSE_US);
