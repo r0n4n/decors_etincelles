@@ -14,6 +14,8 @@
 
 bool decor_cmd = false ; 
 
+#define SERIAL_BAUD 115200
+
 // RC data struct
 struct rc {
  long int ST;
@@ -22,6 +24,7 @@ struct rc {
 };
 
 rc g2tb ;
+
 
 // Strip LEDS
 #define LED_COUNT 3
@@ -33,6 +36,8 @@ void setup() {
     pinMode(DECOR_IN_PIN, INPUT);
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN,LOW);
+
+    Serial.begin(SERIAL_BAUD);
     
     // init PPM
     ppmEncoder.begin(PPM_OUT_PIN,5);
@@ -78,9 +83,14 @@ void readRC(void){
 void RcToPPM(void){
   // PPM conversion
   readRC();
+  //dispRC();
   ppmEncoder.setChannel(3, g2tb.ST);
   ppmEncoder.setChannel(2, g2tb.TH);
   ppmEncoder.setChannel(4, g2tb.CH3);
+}
+
+void dispRC(void){
+  Serial.print("ST: "); Serial.print(g2tb.ST); Serial.print("  TH: "); Serial.print(g2tb.TH); Serial.print("  CH3: "); Serial.println(g2tb.CH3);
 }
 
 
