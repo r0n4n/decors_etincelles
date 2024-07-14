@@ -14,6 +14,7 @@
 
 bool decor_cmd = false ; 
 #define TRIG_PULSE_US 1800
+#define TRIG_MAX_PULSE_US 1900
 
 #define SERIAL_BAUD 115200
 
@@ -104,19 +105,21 @@ void decor_ctrl(void){
   //toggle(bRE);
   //toggle(commandDetection(DECOR_IN_PIN)); 
   //decor_cmd = digitalRead(DECOR_IN_PIN);
-  static unsigned long last_decor_in_pulse ;
   unsigned long decor_in_pulse = pulseIn(DECOR_IN_PIN,HIGH);
-  
+  bool request = (decor_in_pulse>TRIG_PULSE_US);
+  static bool last_request = false;
   
   //decor_cmd = (decor_in_pulse>TRIG_PULSE_US);
-  bool trig_cmd= risingEdge((last_decor_in_pulse>TRIG_PULSE_US), (decor_in_pulse>TRIG_PULSE_US)) ; 
-  last_decor_in_pulse = decor_in_pulse;
+  bool trig_cmd= risingEdge(last_request, request) ; 
+  last_request = request;
 
   if (trig_cmd){
-    //Serial.println(decor_in_pulse);
+    Serial.println(decor_in_pulse);
     ws2812fx.start();
   }
   toggle(trig_cmd);
+
+  
 
   if (decor_cmd){
     digitalWrite(CMD_PIN,HIGH);
