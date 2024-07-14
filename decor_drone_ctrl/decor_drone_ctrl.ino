@@ -29,7 +29,7 @@ rc g2tb ;
 
 
 // Strip LEDS
-#define LED_COUNT 3
+#define LED_COUNT 10
 WS2812FX ws2812fx = WS2812FX(LED_COUNT, LED_PIN, NEO_RGB + NEO_KHZ800);
 
 void setup() {
@@ -52,11 +52,9 @@ void setup() {
 
     // Strip LEDs init
     ws2812fx.init();
-    ws2812fx.setBrightness(150);
+    ws2812fx.setBrightness(255);
     ws2812fx.setSpeed(9000);
-    ws2812fx.setMode(FX_MODE_RAINBOW);
-    ws2812fx.start();
-
+    ws2812fx.setMode(FX_MODE_STATIC);
 }
 
 void initRC(void){
@@ -99,7 +97,8 @@ void dispRC(void){
 void decor_ctrl(void){
   // Strip LEDs control
   ws2812fx.service();
-  
+  stripSeq();
+  //ws2812fx.start();
   
   //bool bRE = risingEdge(DECOR_IN_PIN);
   //toggle(bRE);
@@ -123,8 +122,7 @@ void decor_ctrl(void){
 
   if (decor_cmd){
     digitalWrite(CMD_PIN,HIGH);
-    digitalWrite(LED_BUILTIN,HIGH);
-    
+    digitalWrite(LED_BUILTIN,HIGH);    
   }
   else{
     digitalWrite(CMD_PIN,LOW);
@@ -165,4 +163,39 @@ bool commandDetection(int pin){
   }
   return result;
   
+}
+
+
+void stripSeq(void){
+  static int step = 1; 
+  int step_nbr = 3;
+  int main_delay = 8000; // ms
+  static int _delay = main_delay; // ms
+  static unsigned long   _last_date = 0;
+  unsigned long date = millis();
+  unsigned long  _timer = date - _last_date ; 
+  
+  if (_timer>_delay){
+    _last_date = date;
+    step++;
+    if (step>step_nbr){
+      step = 1;
+    }
+    switch (step){
+    case 1:
+      ws2812fx.setMode(FX_MODE_COLOR_WIPE);
+      ws2812fx.setColor(WHITE);
+      ws2812fx.setSpeed(2500);
+      break;
+    case 2:
+      ws2812fx.setMode(FX_MODE_FADE);
+      ws2812fx.setColor(WHITE);
+      ws2812fx.setSpeed(2500);
+      break;
+    case 3:
+      ws2812fx.setMode(FX_MODE_RAINBOW);
+      ws2812fx.setSpeed(2500);
+      break;
+    }
+  }
 }
