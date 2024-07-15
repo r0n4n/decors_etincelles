@@ -3,9 +3,11 @@
 
 // IO DEFINITION
 #define PPM_OUT_PIN 10
-#define CMD_PIN 12
-#define DECOR_IN_PIN 6
 #define LED_PIN 11
+#define CMD_PIN 12
+#define DECOR_PULSE_OUT_PIN 5
+#define DECOR_IN_PIN 6
+
 
 // RC channels pins 
 #define ST_CH 7 // CH1
@@ -37,6 +39,7 @@ void setup() {
     pinMode(CMD_PIN, OUTPUT);
     pinMode(DECOR_IN_PIN, INPUT);
     pinMode(LED_BUILTIN, OUTPUT);
+    pinMode(DECOR_PULSE_OUT_PIN, OUTPUT);
     digitalWrite(LED_BUILTIN,LOW);
 
     Serial.begin(SERIAL_BAUD);
@@ -113,20 +116,27 @@ void decor_ctrl(void){
   last_request = request;
 
   if (trig_cmd){
-    Serial.println(decor_in_pulse);
+    //Serial.println(decor_in_pulse);
     ws2812fx.start();
   }
   toggle(trig_cmd);
-
   
-
+  //control pulse deco
+  if (request){
+    digitalWrite(DECOR_PULSE_OUT_PIN,HIGH);  
+    digitalWrite(LED_BUILTIN,HIGH);   
+  }
+  else {
+    digitalWrite(DECOR_PULSE_OUT_PIN,LOW);
+    digitalWrite(LED_BUILTIN,LOW);
+  }
+  
+  // control toggle deco 
   if (decor_cmd){
-    digitalWrite(CMD_PIN,HIGH);
-    digitalWrite(LED_BUILTIN,HIGH);    
+    digitalWrite(CMD_PIN,HIGH);      
   }
   else{
     digitalWrite(CMD_PIN,LOW);
-    digitalWrite(LED_BUILTIN,LOW);
     ws2812fx.stop();
   }
 }
