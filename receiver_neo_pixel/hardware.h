@@ -21,10 +21,11 @@
 #define RFM69_RST 9 // RST PIN 
 
 // Strips LEDs config
-#define STRIP_CONFIG STRIP_QUAD // STRIP_SINGLE OR STRIP_DOUBLE OR STRIP_QUAD
 #define STRIP_SINGLE 1 // 
 #define STRIP_DOUBLE 2 //
 #define STRIP_QUAD 3 //
+#define STRIP_CONFIG STRIP_SINGLE // STRIP_SINGLE OR STRIP_DOUBLE OR STRIP_QUAD
+
 
 // PIN actionneurs
 #define LED_ONOFF 8
@@ -39,6 +40,8 @@
   #define PIN_STRIP2 3
   #define PIN_STRIP3 5 // bas 1
   #define PIN_STRIP4 4 // bas 2
+#elif (STRIP_CONFIG == STRIP_SINGLE)
+  #define PIN_STRIP1 A3 // haut 1 
 #else
   #define PIN_STRIP1 A3 // pin pour contrôler la bande Led
   #define PIN_STRIP2 5 
@@ -58,6 +61,9 @@
   #define STRIP2_ADDRESS STRIP1_ADDRESS + 3*STRIP1_LEDS_NBR 
   #define STRIP3_ADDRESS STRIP2_ADDRESS + 3*STRIP2_LEDS_NBR
   #define STRIP4_ADDRESS STRIP3_ADDRESS + 3*STRIP3_LEDS_NBR
+#elif (STRIP_CONFIG == STRIP_SINGLE)
+  #define STRIP1_LEDS_NBR 46
+  #define STRIP1_ADDRESS DECOR_DMX_ADRESS
 #else 
   #define STRIP1_LEDS_NBR 27
   #define STRIP2_LEDS_NBR 19
@@ -65,11 +71,11 @@
   #define STRIP2_ADDRESS DECOR_DMX_ADRESS + 3*STRIP1_LEDS_NBR
 #endif 
 
-#define STRIP_ONOFF_LED 7
+//#define STRIP_ONOFF_LED 7
 #define ONOFF_LED_BRIGHTNESS 1
 
 #define RBG
-#define RGB
+//#define RGB
 
 // ***************** Configuration du module RFM69 *********************
 #define FREQUENCY RF69_433MHZ //Match frequency to the hardware version of the radio on your Feather

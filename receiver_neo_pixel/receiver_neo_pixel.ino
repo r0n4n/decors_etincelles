@@ -45,6 +45,8 @@ byte ackCount=0;
   //Adafruit_NeoPixel strip2 = Adafruit_NeoPixel(STRIP2_LEDS_NBR, PIN_STRIP2, NEO_BRG + NEO_KHZ800); 
   Adafruit_NeoPixel strip3 = Adafruit_NeoPixel(STRIP3_LEDS_NBR + STRIP4_LEDS_NBR , PIN_STRIP3, NEO_BRG + NEO_KHZ800); // on configure la première bande avec toutes les LEDs pour assurer la retro-compatibilité
   Adafruit_NeoPixel strip4 = Adafruit_NeoPixel(STRIP4_LEDS_NBR, PIN_STRIP4, NEO_BRG + NEO_KHZ800); 
+#elif (STRIP_CONFIG == STRIP_SINGLE)
+  Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN_STRIP1 , NEO_BRG + NEO_KHZ800); // on configure la première bande avec toutes les LEDs pour assurer la retro-compatibilité
 #else
   Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN_STRIP1 , NEO_BRG + NEO_KHZ800); // on configure la première bande avec toutes les LEDs pour assurer la retro-compatibilité
   Adafruit_NeoPixel strip2 = Adafruit_NeoPixel(STRIP2_LEDS_NBR, PIN_STRIP2, NEO_BRG + NEO_KHZ800); 
@@ -109,6 +111,8 @@ void stripLed_init(){
   //strip2.begin();
   strip3.begin();
   strip4.begin();
+#elif (STRIP_CONFIG == STRIP_SINGLE)
+  pixels.begin(); 
 #else
   pixels.begin(); 
   strip2.begin();
@@ -446,17 +450,19 @@ void updateDevices(){
   }
   #endif
   
-  // update the the strip LED every function calls 
-  #if (STRIP_CONFIG == STRIP_QUAD)
-    pixels.show();
-    //strip2.show();
-    strip3.show();
-    strip4.show();
-  #else
-    //Serial.println("show else");
-    pixels.show();
-    strip2.show();
-  #endif
+// update the the strip LED every function calls 
+#if (STRIP_CONFIG == STRIP_QUAD)
+  pixels.show();
+  //strip2.show();
+  strip3.show();
+  strip4.show();
+#elif (STRIP_CONFIG == STRIP_SINGLE)
+  pixels.show();
+#else
+  //Serial.println("show else");
+  pixels.show();
+  strip2.show();
+#endif
 }
 
 void print_config(void) {
