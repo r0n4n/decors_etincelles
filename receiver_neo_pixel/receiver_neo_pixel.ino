@@ -375,7 +375,7 @@ void updateDevices(){
     #elif (STRIP_CONFIG == STRIP_DOUBLE)
     //Serial.println("String double");
     // strip 1 update
-    for (int i = 0; i < NUMPIXELS  ; i++) { // parcours les éléments du tableau reçu
+    for (int i = 0; i < pixels.numPixels()  ; i++) { // parcours les éléments du tableau reçu
       #ifdef RBG
       // set color for RBG strip LEDs
       pixels.setPixelColor(i, dmxData[DECOR_DMX_ADRESS+3*i], dmxData[DECOR_DMX_ADRESS + 3*i + 2], dmxData[DECOR_DMX_ADRESS+ 3*i +1]); // change the color
