@@ -68,7 +68,7 @@
 #define STRIP_ONOFF_LED 7
 #define ONOFF_LED_BRIGHTNESS 1
 
-//#define RBG
+#define RBG
 #define RGB
 
 // ***************** Configuration du module RFM69 *********************
